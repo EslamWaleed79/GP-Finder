@@ -1,0 +1,2 @@
+- [connect-pg-simple session table](connect-pg-simple-session.md) — createTableIfMissing fails in dev; create the session table manually with psql instead.
+- [React Query 401 auth pattern](react-query-auth.md) — disable retry for 4xx and refetchOnWindowFocus; don't block public routes with top-level useGetMe loading guard.

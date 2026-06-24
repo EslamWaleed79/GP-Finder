@@ -1,0 +1,91 @@
+import { useLogin, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useLocation, Link } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { BookOpen } from "lucide-react";
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+
+export default function Login() {
+  const [_, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  const login = useLogin({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+        setLocation("/dashboard");
+      },
+      onError: (err: any) => {
+        toast({
+          title: "Login Failed",
+          description: err.message || "Invalid credentials",
+          variant: "destructive",
+        });
+      }
+    }
+  });
+
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" }
+  });
+
+  const onSubmit = (data: z.infer<typeof loginSchema>) => {
+    login.mutate({ data });
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center space-y-2">
+          <div className="flex justify-center mb-2">
+            <div className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center">
+              <BookOpen className="w-6 h-6" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
+          <CardDescription>Enter your @eng.asu.edu.eg email to login</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" {...form.register("email")} placeholder="student@eng.asu.edu.eg" />
+              {form.formState.errors.email && (
+                <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" {...form.register("password")} />
+              {form.formState.errors.password && (
+                <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
+              )}
+            </div>
+            <Button type="submit" className="w-full" disabled={login.isPending}>
+              {login.isPending ? "Logging in..." : "Log in"}
+            </Button>
+          </form>
+          <div className="mt-6 text-center text-sm">
+            Don't have an account?{" "}
+            <Link href="/signup" className="text-primary hover:underline font-medium">
+              Sign up
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -3,13 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: GradHub API – student project & teammate finder for Ain Shams Engineering
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User profile operations
+  - name: projects
+    description: Project operations
+  - name: connections
+    description: Connect request operations
+  - name: notifications
+    description: In-app notification operations
+  - name: admin
+    description: Admin operations
+  - name: meta
+    description: Static metadata (skills, majors)
+
 paths:
   /healthz:
     get:
@@ -24,6 +39,539 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth ──────────────────────────────────────────────────────────────
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Register a new student account
+      description: Restricted to @eng.asu.edu.eg email addresses — any other domain is rejected
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupInput"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileView"
+        "400":
+          description: Validation error or domain restriction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileView"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out the current session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get the current authenticated user
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileView"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  # ── Users ─────────────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List student profiles (public view — no contact info)
+      parameters:
+        - in: query
+          name: skills
+          schema:
+            type: string
+          description: Comma-separated skill tags to filter by
+        - in: query
+          name: major
+          schema:
+            type: string
+          description: Major to filter by
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Free-text search across name and bio
+      responses:
+        "200":
+          description: List of profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProfileView"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user profile (contact info included only if connected)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User profile (contact conditionally included)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetailView"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /users/{id}/profile:
+    patch:
+      operationId: updateProfile
+      tags: [users]
+      summary: Update own profile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileView"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  # ── Projects ──────────────────────────────────────────────────────────
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List projects
+      parameters:
+        - in: query
+          name: skills
+          schema:
+            type: string
+          description: Comma-separated required-skill tags to filter by
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [open, in_progress, closed]
+          description: Filter by project status
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Free-text search across title and description
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a project by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project (owner only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project (owner only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  # ── Connections ───────────────────────────────────────────────────────
+  /connections:
+    get:
+      operationId: listConnections
+      tags: [connections]
+      summary: List all connect requests for the current user (incoming and outgoing)
+      responses:
+        "200":
+          description: Connection requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionList"
+
+    post:
+      operationId: sendConnection
+      tags: [connections]
+      summary: Send a connect request to another user (optionally scoped to a project)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectionInput"
+      responses:
+        "201":
+          description: Request sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectRequest"
+        "409":
+          description: A pending or accepted request already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /connections/{id}:
+    patch:
+      operationId: respondConnection
+      tags: [connections]
+      summary: Accept or decline a connect request (recipient only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectionResponse"
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectRequest"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  # ── Notifications ─────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List in-app notifications for the current user
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notification marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  # ── Dashboard summary (wow endpoint) ─────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [users]
+      summary: Aggregated dashboard stats for the current user
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  # ── Admin ─────────────────────────────────────────────────────────────
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [admin]
+      summary: Admin – list all users
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProfileView"
+
+  /admin/users/{id}:
+    delete:
+      operationId: adminDeleteUser
+      tags: [admin]
+      summary: Admin – remove a user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/projects:
+    get:
+      operationId: adminListProjects
+      tags: [admin]
+      summary: Admin – list all projects
+      responses:
+        "200":
+          description: All projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+
+  /admin/projects/{id}:
+    delete:
+      operationId: adminDeleteProject
+      tags: [admin]
+      summary: Admin – remove a project
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ── Meta ──────────────────────────────────────────────────────────────
+  /meta/skills:
+    get:
+      operationId: listSkillTags
+      tags: [meta]
+      summary: List all available skill tags
+      responses:
+        "200":
+          description: Skill tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /meta/majors:
+    get:
+      operationId: listMajors
+      tags: [meta]
+      summary: List all available majors
+      responses:
+        "200":
+          description: Majors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +582,320 @@ components:
       required:
         - status
 
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    # ── Auth ────────────────────────────────────────────────────────────
+    SignupInput:
+      type: object
+      required: [name, email, password, major, skills]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+          description: Must end with @eng.asu.edu.eg
+        password:
+          type: string
+          minLength: 8
+        major:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        bio:
+          type: string
+        phone:
+          type: ["string", "null"]
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    # ── Profile ─────────────────────────────────────────────────────────
+    ProfileView:
+      type: object
+      description: Public-safe user view – never includes email or phone
+      required: [id, name, major, skills, role, createdAt, connectStatus]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        major:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        bio:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [student, admin]
+        createdAt:
+          type: string
+          format: date-time
+        connectStatus:
+          type: string
+          enum: [none, pending_sent, pending_received, connected]
+          description: Connect status relative to the authenticated viewer
+
+    UserDetailView:
+      type: object
+      description: Profile view plus optional contact info when connected
+      required: [id, name, major, skills, role, createdAt, connectStatus]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        major:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        bio:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [student, admin]
+        createdAt:
+          type: string
+          format: date-time
+        connectStatus:
+          type: string
+          enum: [none, pending_sent, pending_received, connected]
+        email:
+          type: ["string", "null"]
+          description: Only present when connected
+        phone:
+          type: ["string", "null"]
+          description: Only present when connected and phone is set
+
+    ProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        major:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        bio:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+
+    # ── Project ─────────────────────────────────────────────────────────
+    Project:
+      type: object
+      required: [id, title, description, requiredSkills, status, ownerId, ownerName, teamSizeCap, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        requiredSkills:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [open, in_progress, closed]
+        ownerId:
+          type: integer
+        ownerName:
+          type: string
+        teamSizeCap:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    ProjectDetail:
+      type: object
+      required: [id, title, description, requiredSkills, status, ownerId, ownerName, teamSizeCap, createdAt, connectStatus]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        requiredSkills:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [open, in_progress, closed]
+        ownerId:
+          type: integer
+        ownerName:
+          type: string
+        teamSizeCap:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        connectStatus:
+          type: string
+          enum: [none, pending_sent, pending_received, connected]
+          description: Viewer's connect status with the project owner
+
+    ProjectInput:
+      type: object
+      required: [title, description, requiredSkills, teamSizeCap]
+      properties:
+        title:
+          type: string
+          minLength: 3
+        description:
+          type: string
+          minLength: 10
+        requiredSkills:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [open, in_progress, closed]
+          default: open
+        teamSizeCap:
+          type: integer
+          minimum: 1
+          maximum: 20
+
+    ProjectUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        requiredSkills:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [open, in_progress, closed]
+        teamSizeCap:
+          type: integer
+
+    # ── Connections ──────────────────────────────────────────────────────
+    ConnectRequest:
+      type: object
+      required: [id, senderId, senderName, recipientId, recipientName, status, createdAt]
+      properties:
+        id:
+          type: integer
+        senderId:
+          type: integer
+        senderName:
+          type: string
+        recipientId:
+          type: integer
+        recipientName:
+          type: string
+        projectId:
+          type: ["integer", "null"]
+        projectTitle:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, accepted, declined]
+        createdAt:
+          type: string
+          format: date-time
+
+    ConnectionList:
+      type: object
+      required: [incoming, outgoing]
+      properties:
+        incoming:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConnectRequest"
+        outgoing:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConnectRequest"
+
+    ConnectionInput:
+      type: object
+      required: [recipientId]
+      properties:
+        recipientId:
+          type: integer
+        projectId:
+          type: ["integer", "null"]
+
+    ConnectionResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [accepted, declined]
+
+    # ── Notifications ────────────────────────────────────────────────────
+    Notification:
+      type: object
+      required: [id, userId, message, read, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        message:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── Dashboard stats (wow) ────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required: [openProjects, totalStudents, myProjects, pendingRequests, unreadNotifications]
+      properties:
+        openProjects:
+          type: integer
+        totalStudents:
+          type: integer
+        myProjects:
+          type: integer
+        pendingRequests:
+          type: integer
+        unreadNotifications:
+          type: integer
