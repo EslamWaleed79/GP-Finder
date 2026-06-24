@@ -30,10 +30,7 @@ router.get("/projects", (async (req, res) => {
       const connectStatus = viewerId
         ? await userRepo.getConnectionStatus(viewerId, p.ownerId)
         : "none";
-      return {
-        ...p,
-        connectStatus,
-      };
+      return { ...p, connectStatus };
     })
   );
 
@@ -55,7 +52,9 @@ router.post("/projects", (async (req, res) => {
     };
 
   if (!title || !description || !teamSizeCap) {
-    return res.status(400).json({ error: "title, description, and teamSizeCap are required" });
+    return res
+      .status(400)
+      .json({ error: "title, description, and teamSizeCap are required" });
   }
 
   const project = await projectRepo.create({
@@ -71,7 +70,7 @@ router.post("/projects", (async (req, res) => {
 }) as RequestHandler);
 
 router.get("/projects/:id", (async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
   const project = await projectRepo.findById(id);
@@ -90,7 +89,7 @@ router.patch("/projects/:id", (async (req, res) => {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
   const existing = await projectRepo.findById(id);
@@ -126,7 +125,7 @@ router.delete("/projects/:id", (async (req, res) => {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
   const existing = await projectRepo.findById(id);

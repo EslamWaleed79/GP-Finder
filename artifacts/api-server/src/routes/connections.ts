@@ -57,7 +57,7 @@ router.patch("/connections/:id", (async (req, res) => {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
   const { status } = req.body as { status?: "accepted" | "declined" };

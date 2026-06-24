@@ -1,19 +1,19 @@
 import { Router } from "express";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { ProjectRepository } from "../repositories/ProjectRepository.js";
+import { NotificationRepository } from "../repositories/NotificationRepository.js";
+import { ConnectionManager } from "../services/ConnectionManager.js";
 import {
   ContactVisibilityResolver,
   PublicViewStrategy,
 } from "../services/strategies/ContactVisibilityStrategy.js";
-import { eq } from "drizzle-orm";
-import { db } from "@workspace/db";
-import { notificationsTable, connectRequestsTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
 import type { RequestHandler } from "express";
 
 const router = Router();
 const userRepo = new UserRepository();
 const projectRepo = new ProjectRepository();
+const notificationRepo = new NotificationRepository();
+const connectionManager = new ConnectionManager();
 const visibilityResolver = new ContactVisibilityResolver();
 
 router.get("/users", (async (req, res) => {
@@ -38,9 +38,9 @@ router.get("/users", (async (req, res) => {
     users.map(async (u) => {
       const connectStatus = viewerId
         ? await userRepo.getConnectionStatus(viewerId, u.id)
-        : "none";
+        : ("none" as const);
       const strategy = new PublicViewStrategy();
-      return strategy.buildView(u, connectStatus as "none" | "pending_sent" | "pending_received" | "connected");
+      return strategy.buildView(u, connectStatus);
     })
   );
 
@@ -48,7 +48,7 @@ router.get("/users", (async (req, res) => {
 }) as RequestHandler);
 
 router.get("/users/:id", (async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
   const user = await userRepo.findById(id);
@@ -60,7 +60,7 @@ router.get("/users/:id", (async (req, res) => {
     : ("none" as const);
 
   const strategy = visibilityResolver.resolve(connectStatus);
-  const view = strategy.buildView(user, connectStatus as "none" | "pending_sent" | "pending_received" | "connected");
+  const view = strategy.buildView(user, connectStatus);
   return res.json(view);
 }) as RequestHandler);
 
@@ -69,7 +69,7 @@ router.patch("/users/:id/profile", (async (req, res) => {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   if (req.session.userId !== id) {
     return res.status(403).json({ error: "Forbidden" });
@@ -96,32 +96,24 @@ router.get("/dashboard/stats", (async (req, res) => {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const [openProjects, totalStudents, myProjects] = await Promise.all([
-    projectRepo.countOpen(),
-    userRepo.count(),
-    projectRepo.countByOwner(req.session.userId),
-  ]);
+  const userId = req.session.userId;
 
-  const [pendingRow] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(connectRequestsTable)
-    .where(
-      sql`${connectRequestsTable.recipientId} = ${req.session.userId} AND ${connectRequestsTable.status} = 'pending'`
-    );
+  const [openProjects, totalStudents, myProjects, unreadNotifications] =
+    await Promise.all([
+      projectRepo.countOpen(),
+      userRepo.count(),
+      projectRepo.countByOwner(userId),
+      notificationRepo.countUnread(userId),
+    ]);
 
-  const [unreadRow] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(notificationsTable)
-    .where(
-      sql`${notificationsTable.userId} = ${req.session.userId} AND ${notificationsTable.read} = false`
-    );
+  const pendingRequests = await connectionManager.countPending(userId);
 
   return res.json({
     openProjects,
     totalStudents,
     myProjects,
-    pendingRequests: Number(pendingRow?.count ?? 0),
-    unreadNotifications: Number(unreadRow?.count ?? 0),
+    pendingRequests,
+    unreadNotifications,
   });
 }) as RequestHandler);
 

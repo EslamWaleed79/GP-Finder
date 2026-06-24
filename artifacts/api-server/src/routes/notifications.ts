@@ -1,23 +1,16 @@
 import { Router } from "express";
-import { eq, and } from "drizzle-orm";
-import { db } from "@workspace/db";
-import { notificationsTable } from "@workspace/db";
+import { NotificationRepository } from "../repositories/NotificationRepository.js";
 import type { RequestHandler } from "express";
 
 const router = Router();
+const notificationRepo = new NotificationRepository();
 
 router.get("/notifications", (async (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: "Not authenticated" });
   }
-
-  const notifications = await db
-    .select()
-    .from(notificationsTable)
-    .where(eq(notificationsTable.userId, req.session.userId))
-    .orderBy(notificationsTable.createdAt);
-
-  return res.json(notifications.reverse());
+  const notifications = await notificationRepo.listForUser(req.session.userId);
+  return res.json(notifications);
 }) as RequestHandler);
 
 router.patch("/notifications/:id/read", (async (req, res) => {
@@ -25,20 +18,10 @@ router.patch("/notifications/:id/read", (async (req, res) => {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
-  const [notification] = await db
-    .update(notificationsTable)
-    .set({ read: true })
-    .where(
-      and(
-        eq(notificationsTable.id, id),
-        eq(notificationsTable.userId, req.session.userId)
-      )
-    )
-    .returning();
-
+  const notification = await notificationRepo.markRead(id, req.session.userId);
   if (!notification) {
     return res.status(404).json({ error: "Notification not found" });
   }

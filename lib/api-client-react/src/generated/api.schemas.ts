@@ -58,7 +58,7 @@ export const ProfileViewConnectStatus = {
 } as const;
 
 /**
- * Public-safe user view – never includes email or phone
+ * Public-safe user view – email/phone only present when connected or for admin
  */
 export interface ProfileView {
   id: number;
@@ -71,6 +71,10 @@ export interface ProfileView {
   createdAt: string;
   /** Connect status relative to the authenticated viewer */
   connectStatus: ProfileViewConnectStatus;
+  /** Only present when connected or for admin view */
+  email?: string | null;
+  /** Only present when connected and phone is set */
+  phone?: string | null;
 }
 
 export type UserDetailViewRole = typeof UserDetailViewRole[keyof typeof UserDetailViewRole];

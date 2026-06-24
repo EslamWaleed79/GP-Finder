@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 
@@ -16,8 +18,8 @@ const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   major: z.string().min(1, "Major is required"),
   skills: z.array(z.string()).min(1, "Select at least one skill"),
-  bio: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
+  bio: z.string().optional(),
+  phone: z.string().optional(),
 });
 
 type ProfileData = z.infer<typeof profileSchema>;
@@ -53,8 +55,8 @@ export default function Profile() {
         name: me.name,
         major: me.major,
         skills: me.skills,
-        bio: me.bio || "",
-        phone: me.phone || ""
+        bio: me.bio ?? "",
+        phone: me.phone ?? "",
       });
     }
   }, [me, form]);
@@ -63,7 +65,27 @@ export default function Profile() {
   if (!me) return null;
 
   const onSubmit = (data: ProfileData) => {
-    updateProfile.mutate({ id: me.id, data });
+    updateProfile.mutate({
+      id: me.id,
+      data: {
+        name: data.name,
+        major: data.major,
+        skills: data.skills,
+        bio: data.bio || null,
+        phone: data.phone || null,
+      }
+    });
+  };
+
+  const selectedSkills = form.watch("skills");
+
+  const toggleSkill = (skill: string) => {
+    const current = form.getValues("skills");
+    if (current.includes(skill)) {
+      form.setValue("skills", current.filter(s => s !== skill), { shouldValidate: true });
+    } else {
+      form.setValue("skills", [...current, skill], { shouldValidate: true });
+    }
   };
 
   return (
@@ -87,7 +109,7 @@ export default function Profile() {
 
             <div className="space-y-2">
               <Label>Major</Label>
-              <Select value={form.watch("major")} onValueChange={val => form.setValue("major", val)}>
+              <Select value={form.watch("major")} onValueChange={val => form.setValue("major", val, { shouldValidate: true })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select major" />
                 </SelectTrigger>
@@ -97,17 +119,43 @@ export default function Profile() {
                   ))}
                 </SelectContent>
               </Select>
+              {form.formState.errors.major && <p className="text-sm text-destructive">{form.formState.errors.major.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Skills</Label>
+              {selectedSkills.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {selectedSkills.map(s => (
+                    <Badge key={s} variant="default" className="gap-1 cursor-pointer" onClick={() => toggleSkill(s)}>
+                      {s} <X className="w-3 h-3" />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-2 border rounded-md bg-muted/30">
+                {(allSkills as string[]).filter(s => !selectedSkills.includes(s)).map(skill => (
+                  <Badge
+                    key={skill}
+                    variant="outline"
+                    className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={() => toggleSkill(skill)}
+                  >
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+              {form.formState.errors.skills && <p className="text-sm text-destructive">{form.formState.errors.skills.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label>Bio</Label>
-              <Textarea {...form.register("bio")} placeholder="Write a short bio about your interests..." className="h-32" />
+              <Textarea {...form.register("bio")} placeholder="Write a short bio about your interests..." className="h-28" />
             </div>
 
             <div className="space-y-2">
-              <Label>Phone Number</Label>
+              <Label>Phone Number <span className="text-muted-foreground font-normal text-xs">(only visible to connections)</span></Label>
               <Input {...form.register("phone")} placeholder="+20..." />
-              <p className="text-xs text-muted-foreground">Only visible to connected users.</p>
             </div>
 
             <Button type="submit" disabled={updateProfile.isPending}>

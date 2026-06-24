@@ -2,11 +2,16 @@ import { eq, or, and, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import {
   connectRequestsTable,
-  usersTable,
   type ConnectRequest,
 } from "@workspace/db";
 
-export interface ConnectRequestWithNames extends ConnectRequest {
+export interface ConnectRequestWithNames {
+  id: number;
+  senderId: number;
+  recipientId: number;
+  projectId: number | null;
+  status: "pending" | "accepted" | "declined";
+  createdAt: Date;
   senderName: string;
   recipientName: string;
   projectTitle: string | null;
@@ -90,12 +95,23 @@ export class ConnectionManager {
     return { ok: true, request: updated! };
   }
 
+  async countPending(userId: number): Promise<number> {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(connectRequestsTable)
+      .where(
+        and(
+          eq(connectRequestsTable.recipientId, userId),
+          eq(connectRequestsTable.status, "pending")
+        )
+      );
+    return Number(row?.count ?? 0);
+  }
+
   async listForUser(userId: number): Promise<{
     incoming: ConnectRequestWithNames[];
     outgoing: ConnectRequestWithNames[];
   }> {
-    const senderAlias = usersTable;
-
     const rows = await db.execute(sql`
       SELECT
         cr.id,
@@ -115,7 +131,7 @@ export class ConnectionManager {
       ORDER BY cr.created_at DESC
     `);
 
-    const all = rows.rows as ConnectRequestWithNames[];
+    const all = (rows.rows as unknown) as ConnectRequestWithNames[];
     return {
       incoming: all.filter((r) => r.recipientId === userId),
       outgoing: all.filter((r) => r.senderId === userId),

@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { ProjectRepository } from "../repositories/ProjectRepository.js";
-import { PublicViewStrategy } from "../services/strategies/ContactVisibilityStrategy.js";
+import {
+  ConnectedViewStrategy,
+} from "../services/strategies/ContactVisibilityStrategy.js";
 import type { RequestHandler } from "express";
 
 const router = Router();
@@ -21,13 +23,13 @@ async function requireAdmin(req: any, res: any, next: any) {
 
 router.get("/admin/users", requireAdmin as RequestHandler, (async (_req, res) => {
   const users = await userRepo.list({});
-  const strategy = new PublicViewStrategy();
-  const views = users.map((u) => strategy.buildView(u, "none"));
+  const strategy = new ConnectedViewStrategy();
+  const views = users.map((u) => strategy.buildView(u, "connected"));
   return res.json(views);
 }) as RequestHandler);
 
 router.delete("/admin/users/:id", requireAdmin as RequestHandler, (async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   await userRepo.delete(id);
   return res.json({ message: "User deleted" });
@@ -39,7 +41,7 @@ router.get("/admin/projects", requireAdmin as RequestHandler, (async (_req, res)
 }) as RequestHandler);
 
 router.delete("/admin/projects/:id", requireAdmin as RequestHandler, (async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   await projectRepo.delete(id);
   return res.json({ message: "Project deleted" });
