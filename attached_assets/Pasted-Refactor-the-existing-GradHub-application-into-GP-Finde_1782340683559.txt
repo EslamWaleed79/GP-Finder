@@ -1,0 +1,85 @@
+Refactor the existing "GradHub" application into "GP Finder" — a platform exclusively for Computer Engineering students finding graduation projects and teammates. EXTEND the existing Repository Pattern, service-layer split, and Strategy Pattern for privacy (PublicViewStrategy / ConnectedViewStrategy). Do not rewrite from scratch; refactor and extend existing files.
+
+0. PRESERVE EXISTING CONSTRAINTS
+   - Keep the existing university email-domain restriction on signup exactly as-is. Do not remove or alter it.
+
+1. BRANDING
+   - Replace every instance of "GradHub" with "GP Finder" in headers, page titles, meta tags, navigation, and any user-facing text.
+
+2. SCHEMA UPDATES (Migration)
+   Users Table:
+     - Add bio (text, required)
+     - Add phone (string, required) — collected at signup, hidden by privacy strategy. Validate as a valid Egyptian mobile number (regex: /^01[0-2,5]{1}[0-9]{8}$/) on both frontend and backend.
+     - Add gpa (float, required, range 0.0–4.0) — collected at signup, hidden by privacy strategy
+     - Add bylaw (enum: '2018', '2023', required)
+     - Add track (enum: 'Software Engineering', 'Hardware Design', 'Networks and Cybersecurity', 'AI', 'Embedded', 'Other', required)
+     - Add custom_track (string, nullable; REQUIRED only if track == 'Other'; otherwise null)
+     - Add gender (enum: 'Male', 'Female', required)
+     - Add skills (array of strings, required; combobox allowing selection from predefined list OR free-text custom entry)
+     - Predefined skills list: C/C++, Python, Java, JavaScript/TypeScript, C#, Go, Rust, MATLAB, React, Next.js, Node.js, Express, HTML/CSS, Tailwind, Django, Flutter, React Native, Swift, Kotlin, TensorFlow, PyTorch, Scikit-learn, OpenCV, YOLO, NLP, Computer Vision, Verilog, VHDL, SystemVerilog, FPGA, Arduino, Raspberry Pi, STM32, PCB Design, Cisco IOS, Wireshark, Network Security, TCP/IP, SDN, RTOS, Embedded C, ARM Cortex, Microcontrollers, IoT, Git, Docker, Kubernetes, AWS, Azure, Linux, Bash, PostgreSQL, MongoDB, MySQL, Firebase, Redis
+     - All new fields (track, bylaw, gender, gpa, skills, bio, phone) are REQUIRED to complete first-time signup. Block onboarding completion until all are filled.
+     - Existing users: run a migration adding columns with NULL defaults, then redirect them to a "Complete Your Profile" page on next login.
+
+   Projects Table:
+     - Add track (enum matching User tracks, required)
+     - Add leader_id (foreign key -> users.id, required)
+     - Add max_members (integer, default 5, min 1, max 10)
+     - Add status (enum: 'Open', 'Closed', 'In Progress', default 'Open')
+     - Existing projects: assign the original creator as leader_id, set track based on creator's track or default to 'Software Engineering', set status to 'Open'.
+     - Leader can edit track and max_members after creation. Block lowering max_members below the current count of 'accepted' members — return an error explaining the project must drop members first.
+     - A user can be the leader of at most one project. Block creating a new project if the user is already leader_id on any existing project, or if they have an 'accepted' ProjectApplication elsewhere. Being a leader counts as "being in a project" for every exclusivity check in this spec.
+
+   ProjectApplications (NEW TABLE — separate from ConnectRequests):
+     - id, applicant_id (FK -> users), project_id (FK -> projects), status (enum: 'pending', 'accepted', 'rejected', 'left', 'removed'), requested_at, decided_at
+     - Leader CANNOT accept if current accepted members >= project.max_members
+     - A student can have multiple 'pending' applications at once, but the backend must block accepting any new application — or block submitting a new one — if the student already has an 'accepted' membership in any other project, OR is already a leader of any project. Return error: "You must leave your current project before joining a new one."
+
+   ConnectRequests (EXISTING TABLE — keep separate, user-to-user):
+     - requester_id, recipient_id, status (enum: 'pending', 'accepted', 'rejected')
+     - Kept structurally separate from ProjectApplications. The one exception to "applications don't auto-create connections" is defined explicitly in section 4 below — it is scoped to leader↔applicant only, not a general merge of the two tables.
+
+3. PRIVACY STRATEGY (Extend existing PublicViewStrategy / ConnectedViewStrategy)
+   - Phone and GPA are NEVER included in any API response for another user unless:
+     * The requesting user is viewing their OWN profile (always see full data), OR
+     * An accepted ConnectRequest currently exists between the requesting user and the target user.
+   - Enforce this server-side in the PrivacyMaskService / Strategy, not just UI-hidden. Return null/omit the fields entirely.
+   - For project applications while still pending: the leader sees applicant's name, track, skills, bio, bylaw, and gender — never GPA or phone, in any form (no exact value, no bracket/range). This only changes once the application is accepted, per section 4.
+
+4. PROJECT LEADERSHIP
+   - Project creator is automatically assigned as leader (leader_id).
+   - Only the leader sees Accept/Reject/Remove controls on ProjectApplications for their project.
+   - Leader can change member status: 'pending' → 'accepted' or 'rejected'; 'accepted' → 'removed'.
+   - Members can self-remove: 'accepted' → 'left'.
+   - Application-to-connection bridge: when a leader changes a ProjectApplication's status from 'pending' to 'accepted', the system automatically grants a connection between leader_id and applicant_id:
+     * Set requester_id = applicant_id, recipient_id = leader_id, status = 'accepted'.
+     * If ANY ConnectRequest already exists between these two users in any status (pending, rejected, etc.), update that single existing row to 'accepted' instead of creating a new one. (This intentionally overwrites any prior personal connection state between the two — project-based contact sharing is the primary connection mechanism on this platform.)
+     * This reveals phone and GPA between the leader and that specific applicant only. The applicant's act of applying is the consent for this; rejecting an application never triggers it, and it does not extend to other members of the same project — they remain unconnected to each other and to the leader unless they separately send and accept a ConnectRequest.
+   - Revocation on exit: when a ProjectApplication's status changes to 'left' or 'removed', automatically update the ConnectRequest between that member and the leader to 'rejected', revoking the privacy reveal. The member and leader are no longer connected, and phone/GPA become hidden from each other again.
+   - Project status transitions: when the first ProjectApplication is accepted, automatically change project.status from 'Open' to 'In Progress'. While 'In Progress', the leader can manually change status to 'Closed' (blocks new applications). Status can never move back to 'Open' once it has left that state.
+
+5. DISCOVER FEED
+   Students Tab:
+     - Add filter dropdowns: Track (all enum values, including 'Other'), Bylaw ('2018', '2023'), Gender ('All', 'Male', 'Female'). Default is 'All' for each. Filtering by 'Other' matches all users where track == 'Other', regardless of custom_track value.
+     - Default sort: students sharing the viewer's track appear first; then sort by name or recency.
+     - Card shows: Name, Track badge, Bylaw, Gender, Skills (first 3 tags), Bio snippet (120 chars). Phone and GPA are completely absent.
+     - Track badge display: if user.track == 'Other', show user.custom_track as the badge text; otherwise show user.track.
+   
+   Projects Tab:
+     - Add Track filter dropdown (same 'Other' matching rule as above).
+     - Card shows: Title, Track badge (same display logic as above, using the project's track/custom_track), Status, Required Skills, Current Members / Max Members, Leader name. "Apply" button only if Open, not full, the user is not already pending/accepted elsewhere, and the user is not a leader of any project.
+   
+   Progressive disclosure: keep existing pattern — short summary on card, full profile/project detail on click.
+
+6. ONBOARDING & PROFILE FORMS
+   - Step-by-step wizard requiring all new fields.
+   - Skills: tag-input combobox with predefined suggestions and free-text entry.
+   - Track: if "Other" selected, reveal and require custom_track text field.
+   - GPA: number input with 0.1 step, range 0.0–4.0.
+   - Responsive on mobile.
+
+7. VERIFICATION BEFORE DEPLOY
+   - Add a temporary /debug/privacy-check route, gated to admin-only, that returns JSON confirming: for a given target user, phone and GPA are null when no accepted ConnectRequest exists, and present when one does (including via project-application acceptance), and null again after that connection is revoked by leave/removal.
+   - Ensure a user always sees their own full profile data.
+   - Mark the route with a `// TODO: DELETE BEFORE DEPLOY` comment, and once verification passes, REMOVE it entirely before deploying — it must not exist in the production build.
+
+Build all migrations, update all routes, forms, and components. Keep existing working features intact.

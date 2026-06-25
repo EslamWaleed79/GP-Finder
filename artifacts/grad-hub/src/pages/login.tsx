@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -52,11 +52,11 @@ export default function Login() {
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
             <div className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center">
-              <BookOpen className="w-6 h-6" />
+              <GraduationCap className="w-6 h-6" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Welcome back</CardTitle>
-          <CardDescription>Enter your @eng.asu.edu.eg email to login</CardDescription>
+          <CardTitle className="text-2xl font-bold tracking-tight">Welcome to GP Finder</CardTitle>
+          <CardDescription>Enter your @eng.asu.edu.eg email to log in</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

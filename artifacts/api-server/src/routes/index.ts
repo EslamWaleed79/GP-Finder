@@ -7,6 +7,8 @@ import connectionsRouter from "./connections.js";
 import notificationsRouter from "./notifications.js";
 import adminRouter from "./admin.js";
 import metaRouter from "./meta.js";
+import applicationsRouter from "./applications.js";
+import debugRouter from "./debug.js";
 
 const router: IRouter = Router();
 
@@ -18,5 +20,7 @@ router.use(connectionsRouter);
 router.use(notificationsRouter);
 router.use(adminRouter);
 router.use(metaRouter);
+router.use(applicationsRouter);
+router.use(debugRouter);
 
 export default router;

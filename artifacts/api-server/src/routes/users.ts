@@ -5,6 +5,7 @@ import { NotificationRepository } from "../repositories/NotificationRepository.j
 import { ConnectionManager } from "../services/ConnectionManager.js";
 import {
   ContactVisibilityResolver,
+  SelfViewStrategy,
   PublicViewStrategy,
 } from "../services/strategies/ContactVisibilityStrategy.js";
 import type { RequestHandler } from "express";
@@ -17,20 +18,27 @@ const connectionManager = new ConnectionManager();
 const visibilityResolver = new ContactVisibilityResolver();
 
 router.get("/users", (async (req, res) => {
-  const { skills, major, search } = req.query as {
+  const { skills, major, search, track, bylaw, gender } = req.query as {
     skills?: string;
     major?: string;
     search?: string;
+    track?: string;
+    bylaw?: string;
+    gender?: string;
   };
 
   const skillsArr = skills
-    ? skills
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
+    ? skills.split(",").map((s) => s.trim()).filter(Boolean)
     : undefined;
 
-  const users = await userRepo.list({ skills: skillsArr, major, search });
+  const users = await userRepo.list({
+    skills: skillsArr,
+    major,
+    search,
+    track: track && track !== "All" ? track : undefined,
+    bylaw: bylaw && bylaw !== "All" ? bylaw : undefined,
+    gender: gender && gender !== "All" ? gender : undefined,
+  });
 
   const viewerId: number | undefined = req.session.userId;
 
@@ -55,6 +63,13 @@ router.get("/users/:id", (async (req, res) => {
   if (!user) return res.status(404).json({ error: "User not found" });
 
   const viewerId: number | undefined = req.session.userId;
+
+  // Self-view: always return full data
+  if (viewerId === id) {
+    const strategy = new SelfViewStrategy();
+    return res.json(strategy.buildView(user, "none"));
+  }
+
   const connectStatus = viewerId
     ? await userRepo.getConnectionStatus(viewerId, id)
     : ("none" as const);
@@ -75,20 +90,34 @@ router.patch("/users/:id/profile", (async (req, res) => {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { name, major, skills, bio, phone } = req.body as {
-    name?: string;
-    major?: string;
-    skills?: string[];
-    bio?: string | null;
-    phone?: string | null;
-  };
+  const { name, skills, bio, phone, gpa, bylaw, track, customTrack, gender } =
+    req.body as {
+      name?: string;
+      skills?: string[];
+      bio?: string | null;
+      phone?: string | null;
+      gpa?: number | null;
+      bylaw?: "2018" | "2023";
+      track?: string;
+      customTrack?: string | null;
+      gender?: "Male" | "Female";
+    };
 
-  const updated = await userRepo.update(id, { name, major, skills, bio, phone });
+  const updated = await userRepo.update(id, {
+    name,
+    skills,
+    bio,
+    phone,
+    gpa,
+    bylaw,
+    track: track as any,
+    customTrack,
+    gender,
+  });
   if (!updated) return res.status(404).json({ error: "User not found" });
 
-  const strategy = new PublicViewStrategy();
-  const view = strategy.buildView(updated, "none");
-  return res.json(view);
+  const strategy = new SelfViewStrategy();
+  return res.json(strategy.buildView(updated, "none"));
 }) as RequestHandler);
 
 router.get("/dashboard/stats", (async (req, res) => {

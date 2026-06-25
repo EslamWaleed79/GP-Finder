@@ -16,6 +16,7 @@ import Admin from "@/pages/admin";
 import ProjectDetail from "@/pages/project-detail";
 import UserDetail from "@/pages/user-detail";
 import ProjectForm from "@/pages/project-form";
+import CompleteProfile from "@/pages/complete-profile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,19 +30,35 @@ const queryClient = new QueryClient({
   },
 });
 
-function ProtectedRoute({ component: Component, adminOnly = false }: { component: any; adminOnly?: boolean }) {
+function isProfileIncomplete(me: any): boolean {
+  return !me.track || !me.bylaw || !me.gender || me.gpa == null || !me.phone;
+}
+
+function ProtectedRoute({
+  component: Component,
+  adminOnly = false,
+  skipOnboardingCheck = false,
+}: {
+  component: any;
+  adminOnly?: boolean;
+  skipOnboardingCheck?: boolean;
+}) {
   const { data: me, isLoading } = useGetMe();
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
+    );
   }
 
-  if (!me) {
-    return <Redirect to="/login" />;
-  }
+  if (!me) return <Redirect to="/login" />;
 
-  if (adminOnly && me.role !== "admin") {
-    return <Redirect to="/dashboard" />;
+  if (adminOnly && me.role !== "admin") return <Redirect to="/dashboard" />;
+
+  if (!skipOnboardingCheck && isProfileIncomplete(me)) {
+    return <Redirect to="/complete-profile" />;
   }
 
   return <Component />;
@@ -50,7 +67,11 @@ function ProtectedRoute({ component: Component, adminOnly = false }: { component
 function RootRedirect() {
   const { data: me, isLoading } = useGetMe();
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
+    );
   }
   return <Redirect to={me ? "/dashboard" : "/login"} />;
 }
@@ -63,6 +84,10 @@ function Router() {
 
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
+
+        <Route path="/complete-profile">
+          <ProtectedRoute component={CompleteProfile} skipOnboardingCheck={true} />
+        </Route>
 
         <Route path="/dashboard">
           <ProtectedRoute component={Dashboard} />

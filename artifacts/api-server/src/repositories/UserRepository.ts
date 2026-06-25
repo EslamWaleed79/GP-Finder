@@ -1,4 +1,4 @@
-import { eq, ilike, or, sql } from "drizzle-orm";
+import { eq, ilike, or, sql, and } from "drizzle-orm";
 import { db } from "@workspace/db";
 import {
   usersTable,
@@ -32,7 +32,19 @@ export class UserRepository {
   async update(
     id: number,
     data: Partial<
-      Pick<User, "name" | "major" | "skills" | "bio" | "phone">
+      Pick<
+        User,
+        | "name"
+        | "major"
+        | "skills"
+        | "bio"
+        | "phone"
+        | "gpa"
+        | "bylaw"
+        | "track"
+        | "customTrack"
+        | "gender"
+      >
     >
   ): Promise<User | undefined> {
     const [user] = await db
@@ -51,13 +63,24 @@ export class UserRepository {
     skills?: string[];
     major?: string;
     search?: string;
+    track?: string;
+    bylaw?: string;
+    gender?: string;
   }): Promise<User[]> {
     const conditions = [];
 
     if (filters.major) {
       conditions.push(ilike(usersTable.major, `%${filters.major}%`));
     }
-
+    if (filters.track) {
+      conditions.push(eq(usersTable.track, filters.track as any));
+    }
+    if (filters.bylaw) {
+      conditions.push(eq(usersTable.bylaw, filters.bylaw as any));
+    }
+    if (filters.gender) {
+      conditions.push(eq(usersTable.gender, filters.gender as any));
+    }
     if (filters.search) {
       conditions.push(
         or(
@@ -67,21 +90,16 @@ export class UserRepository {
       );
     }
 
-    const baseQuery =
-      conditions.length > 0
-        ? db
-            .select()
-            .from(usersTable)
-            .where(
-              conditions.length === 1
-                ? conditions[0]
-                : sql`${conditions.reduce((acc, c, i) =>
-                    i === 0 ? c : sql`${acc} AND ${c}`
-                  )}`
-            )
-        : db.select().from(usersTable);
+    const whereClause =
+      conditions.length === 0
+        ? undefined
+        : conditions.length === 1
+          ? conditions[0]
+          : and(...conditions);
 
-    const users = await baseQuery;
+    const users = whereClause
+      ? await db.select().from(usersTable).where(whereClause)
+      : await db.select().from(usersTable);
 
     if (filters.skills && filters.skills.length > 0) {
       return users.filter((u) =>

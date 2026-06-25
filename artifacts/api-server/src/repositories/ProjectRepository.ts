@@ -3,15 +3,19 @@ import { db } from "@workspace/db";
 import {
   projectsTable,
   usersTable,
+  projectApplicationsTable,
   type Project,
   type InsertProject,
 } from "@workspace/db";
 
+export type ProjectWithMeta = Project & {
+  ownerName: string;
+  leaderName: string | null;
+  memberCount: number;
+};
+
 export class ProjectRepository {
-  async findById(id: number): Promise<
-    | (Project & { ownerName: string })
-    | undefined
-  > {
+  async findById(id: number): Promise<ProjectWithMeta | undefined> {
     const [row] = await db
       .select({
         id: projectsTable.id,
@@ -20,24 +24,56 @@ export class ProjectRepository {
         requiredSkills: projectsTable.requiredSkills,
         status: projectsTable.status,
         ownerId: projectsTable.ownerId,
+        leaderId: projectsTable.leaderId,
+        track: projectsTable.track,
         ownerName: usersTable.name,
         teamSizeCap: projectsTable.teamSizeCap,
+        maxMembers: projectsTable.maxMembers,
         createdAt: projectsTable.createdAt,
       })
       .from(projectsTable)
       .innerJoin(usersTable, eq(projectsTable.ownerId, usersTable.id))
       .where(eq(projectsTable.id, id));
-    return row;
+    if (!row) return undefined;
+
+    const leaderRow = row.leaderId
+      ? await db
+          .select({ name: usersTable.name })
+          .from(usersTable)
+          .where(eq(usersTable.id, row.leaderId))
+          .limit(1)
+      : [];
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(projectApplicationsTable)
+      .where(
+        and(
+          eq(projectApplicationsTable.projectId, id),
+          eq(projectApplicationsTable.status, "accepted")
+        )
+      );
+
+    return {
+      ...row,
+      leaderName: leaderRow[0]?.name ?? null,
+      memberCount: Number(count),
+    };
   }
 
-  async create(data: InsertProject): Promise<Project & { ownerName: string }> {
+  async create(data: InsertProject): Promise<ProjectWithMeta> {
     const [project] = await db.insert(projectsTable).values(data).returning();
     const owner = await db
       .select({ name: usersTable.name })
       .from(usersTable)
       .where(eq(usersTable.id, project!.ownerId))
       .limit(1);
-    return { ...project!, ownerName: owner[0]?.name ?? "" };
+    return {
+      ...project!,
+      ownerName: owner[0]?.name ?? "",
+      leaderName: owner[0]?.name ?? null,
+      memberCount: 0,
+    };
   }
 
   async update(
@@ -45,10 +81,17 @@ export class ProjectRepository {
     data: Partial<
       Pick<
         Project,
-        "title" | "description" | "requiredSkills" | "status" | "teamSizeCap"
+        | "title"
+        | "description"
+        | "requiredSkills"
+        | "status"
+        | "teamSizeCap"
+        | "maxMembers"
+        | "track"
+        | "leaderId"
       >
     >
-  ): Promise<(Project & { ownerName: string }) | undefined> {
+  ): Promise<ProjectWithMeta | undefined> {
     const [project] = await db
       .update(projectsTable)
       .set(data)
@@ -60,7 +103,28 @@ export class ProjectRepository {
       .from(usersTable)
       .where(eq(usersTable.id, project.ownerId))
       .limit(1);
-    return { ...project, ownerName: owner[0]?.name ?? "" };
+    const leaderRow = project.leaderId
+      ? await db
+          .select({ name: usersTable.name })
+          .from(usersTable)
+          .where(eq(usersTable.id, project.leaderId))
+          .limit(1)
+      : [];
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(projectApplicationsTable)
+      .where(
+        and(
+          eq(projectApplicationsTable.projectId, id),
+          eq(projectApplicationsTable.status, "accepted")
+        )
+      );
+    return {
+      ...project,
+      ownerName: owner[0]?.name ?? "",
+      leaderName: leaderRow[0]?.name ?? null,
+      memberCount: Number(count),
+    };
   }
 
   async delete(id: number): Promise<void> {
@@ -71,13 +135,16 @@ export class ProjectRepository {
     skills?: string[];
     status?: "open" | "in_progress" | "closed";
     search?: string;
-  }): Promise<(Project & { ownerName: string })[]> {
+    track?: string;
+  }): Promise<ProjectWithMeta[]> {
     const conditions = [];
 
     if (filters.status) {
       conditions.push(eq(projectsTable.status, filters.status));
     }
-
+    if (filters.track) {
+      conditions.push(eq(projectsTable.track, filters.track as any));
+    }
     if (filters.search) {
       conditions.push(
         or(
@@ -102,21 +169,51 @@ export class ProjectRepository {
         requiredSkills: projectsTable.requiredSkills,
         status: projectsTable.status,
         ownerId: projectsTable.ownerId,
+        leaderId: projectsTable.leaderId,
+        track: projectsTable.track,
         ownerName: usersTable.name,
         teamSizeCap: projectsTable.teamSizeCap,
+        maxMembers: projectsTable.maxMembers,
         createdAt: projectsTable.createdAt,
       })
       .from(projectsTable)
       .innerJoin(usersTable, eq(projectsTable.ownerId, usersTable.id))
       .where(whereClause);
 
+    let result = rows;
     if (filters.skills && filters.skills.length > 0) {
-      return rows.filter((p) =>
+      result = rows.filter((p) =>
         filters.skills!.some((s) => p.requiredSkills.includes(s))
       );
     }
 
-    return rows;
+    // Enrich with member counts
+    const enriched = await Promise.all(
+      result.map(async (p) => {
+        const [{ count }] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(projectApplicationsTable)
+          .where(
+            and(
+              eq(projectApplicationsTable.projectId, p.id),
+              eq(projectApplicationsTable.status, "accepted")
+            )
+          );
+        const leaderRow = p.leaderId
+          ? await db
+              .select({ name: usersTable.name })
+              .from(usersTable)
+              .where(eq(usersTable.id, p.leaderId))
+              .limit(1)
+          : [];
+        return {
+          ...p,
+          leaderName: leaderRow[0]?.name ?? p.ownerName,
+          memberCount: Number(count),
+        };
+      })
+    );
+    return enriched;
   }
 
   async countOpen(): Promise<number> {
@@ -133,5 +230,14 @@ export class ProjectRepository {
       .from(projectsTable)
       .where(eq(projectsTable.ownerId, ownerId));
     return Number(row?.count ?? 0);
+  }
+
+  async findByLeader(leaderId: number): Promise<Project | undefined> {
+    const [row] = await db
+      .select()
+      .from(projectsTable)
+      .where(eq(projectsTable.leaderId, leaderId))
+      .limit(1);
+    return row;
   }
 }

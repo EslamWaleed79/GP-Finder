@@ -1,7 +1,7 @@
 import { useGetMe } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, Home, User, Bell, Users, Settings, Shield, BookOpen } from "lucide-react";
+import { LogOut, User, Bell, GraduationCap } from "lucide-react";
 import { Button } from "./ui/button";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -12,7 +12,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   if (!me) return <>{children}</>;
 
   const handleLogout = async () => {
-    // using fetch manually since it's a simple post or we could use the hook, but let's just clear cache and redirect
     await fetch("/api/auth/logout", { method: "POST" });
     queryClient.invalidateQueries();
     setLocation("/login");
@@ -23,13 +22,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-30 w-full border-b border-border bg-card/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl text-primary hover:opacity-80 transition-opacity">
-            <BookOpen className="w-6 h-6" />
-            GradHub
+            <GraduationCap className="w-6 h-6" />
+            GP Finder
           </Link>
           
           <nav className="flex items-center gap-6 text-sm font-medium">
             <Link href="/dashboard" className={`hover:text-primary transition-colors ${location === '/dashboard' ? 'text-primary' : 'text-muted-foreground'}`}>
-              Dashboard
+              Discover
             </Link>
             <Link href="/connections" className={`hover:text-primary transition-colors ${location === '/connections' ? 'text-primary' : 'text-muted-foreground'}`}>
               Connections

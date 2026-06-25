@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { UserValidationService } from "../services/UserValidationService.js";
 import {
-  ContactVisibilityResolver,
+  SelfViewStrategy,
   PublicViewStrategy,
 } from "../services/strategies/ContactVisibilityStrategy.js";
 import type { RequestHandler } from "express";
@@ -11,7 +11,6 @@ import type { RequestHandler } from "express";
 const router = Router();
 const userRepo = new UserRepository();
 const validator = new UserValidationService();
-const visibilityResolver = new ContactVisibilityResolver();
 
 declare module "express-session" {
   interface SessionData {
@@ -20,15 +19,7 @@ declare module "express-session" {
 }
 
 router.post("/auth/signup", (async (req, res) => {
-  const payload = req.body as {
-    name?: unknown;
-    email?: unknown;
-    password?: unknown;
-    major?: unknown;
-    skills?: unknown;
-    bio?: unknown;
-    phone?: unknown;
-  };
+  const payload = req.body as Record<string, unknown>;
 
   const validation = validator.validateSignupPayload(payload);
   if (!validation.valid) {
@@ -46,16 +37,24 @@ router.post("/auth/signup", (async (req, res) => {
     name: (payload.name as string).trim(),
     email,
     passwordHash,
-    major: payload.major as string,
+    major: "Computer Engineering",
     skills: Array.isArray(payload.skills) ? (payload.skills as string[]) : [],
     bio: typeof payload.bio === "string" ? payload.bio : null,
-    phone: typeof payload.phone === "string" ? payload.phone : null,
+    phone: payload.phone as string,
+    gpa: Number(payload.gpa),
+    bylaw: payload.bylaw as "2018" | "2023",
+    track: payload.track as any,
+    customTrack:
+      payload.track === "Other" && typeof payload.customTrack === "string"
+        ? payload.customTrack.trim()
+        : null,
+    gender: payload.gender as "Male" | "Female",
     role: "student",
   });
 
   req.session.userId = user.id;
 
-  const strategy = new PublicViewStrategy();
+  const strategy = new SelfViewStrategy();
   const view = strategy.buildView(user, "none");
   return res.status(201).json(view);
 }) as RequestHandler);
@@ -82,7 +81,7 @@ router.post("/auth/login", (async (req, res) => {
 
   req.session.userId = user.id;
 
-  const strategy = new PublicViewStrategy();
+  const strategy = new SelfViewStrategy();
   const view = strategy.buildView(user, "none");
   return res.json(view);
 }) as RequestHandler);
@@ -101,7 +100,7 @@ router.get("/auth/me", (async (req, res) => {
   if (!user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
-  const strategy = new PublicViewStrategy();
+  const strategy = new SelfViewStrategy();
   const view = strategy.buildView(user, "none");
   return res.json(view);
 }) as RequestHandler);
