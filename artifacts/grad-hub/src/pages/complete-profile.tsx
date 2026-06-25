@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 const TRACKS = [
   "Software Engineering",
@@ -49,12 +49,30 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
+function extractSkillsList(data: any): string[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    if (Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data.items)) return data.items;
+    if (Array.isArray(data.skills)) return data.skills;
+    if (Array.isArray(data.tags)) return data.tags;
+  }
+  return [];
+}
+
 export default function CompleteProfile() {
   const { data: me, isLoading } = useGetMe();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
-  const { data: allSkills = [] } = useListSkillTags();
+  const { data: skillsResponse } = useListSkillTags();
+
+  const allSkills: string[] = useMemo(() => {
+    const raw = extractSkillsList(skillsResponse);
+    return raw.map((s: any) =>
+      typeof s === "string" ? s : s?.name || s?.tag || s?.value || String(s)
+    );
+  }, [skillsResponse]);
 
   const updateProfile = useUpdateProfile({
     mutation: {
@@ -216,7 +234,7 @@ export default function CompleteProfile() {
                 </div>
               )}
               <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 border rounded-md bg-muted/30">
-                {((allSkills as string[]) || []).filter((s) => !selectedSkills.includes(s)).map((skill) => (
+                {allSkills.filter((s) => !selectedSkills.includes(s)).map((skill) => (
                   <Badge key={skill} variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors" onClick={() => toggleSkill(skill)}>
                     {skill}
                   </Badge>
