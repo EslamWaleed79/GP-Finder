@@ -12,7 +12,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   if (!me) return <>{children}</>;
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, { method: "POST" });
     queryClient.invalidateQueries();
     setLocation("/login");
   };

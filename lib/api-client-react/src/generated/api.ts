@@ -68,7 +68,7 @@ export const useHealthCheck = <TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
-export const getSignupUrl = () => `/api/auth/signup`;
+export const getSignupUrl = () => `${import.meta.env.VITE_API_URL}/api/auth/signup`;
 
 export const signup = async (signupInput: BodyType<SignupInput>, options?: RequestInit): Promise<ProfileView> =>
   customFetch<ProfileView>(getSignupUrl(), { ...options, method: 'POST', headers: { 'Content-Type': 'application/json', ...options?.headers }, body: JSON.stringify(signupInput) });
@@ -80,7 +80,7 @@ export const useSignup = <TError = ErrorType<ApiError>, TContext = unknown>(
   return useMutation<Awaited<ReturnType<typeof signup>>, TError, { data: BodyType<SignupInput> }, TContext>({ mutationFn, ...options?.mutation });
 };
 
-export const getLoginUrl = () => `/api/auth/login`;
+export const getLoginUrl = () => `${import.meta.env.VITE_API_URL}/api/auth/login`;
 
 export const login = async (loginInput: BodyType<LoginInput>, options?: RequestInit): Promise<ProfileView> =>
   customFetch<ProfileView>(getLoginUrl(), { ...options, method: 'POST', headers: { 'Content-Type': 'application/json', ...options?.headers }, body: JSON.stringify(loginInput) });
@@ -92,7 +92,7 @@ export const useLogin = <TError = ErrorType<ApiError>, TContext = unknown>(
   return useMutation<Awaited<ReturnType<typeof login>>, TError, { data: BodyType<LoginInput> }, TContext>({ mutationFn, ...options?.mutation });
 };
 
-export const getLogoutUrl = () => `/api/auth/logout`;
+export const getLogoutUrl = () => `${import.meta.env.VITE_API_URL}/api/auth/logout`;
 
 export const logout = async (options?: RequestInit): Promise<MessageResponse> =>
   customFetch<MessageResponse>(getLogoutUrl(), { ...options, method: 'POST' });
@@ -104,7 +104,7 @@ export const useLogout = <TError = ErrorType<ApiError>, TContext = unknown>(
   return useMutation<Awaited<ReturnType<typeof logout>>, TError, void, TContext>({ mutationFn, ...options?.mutation });
 };
 
-export const getGetMeUrl = () => `/api/auth/me`;
+export const getGetMeUrl = () => `${import.meta.env.VITE_API_URL}/api/auth/me`;
 
 export const getMe = async (options?: RequestInit): Promise<ProfileView> =>
   customFetch<ProfileView>(getGetMeUrl(), { ...options, method: 'GET' });
