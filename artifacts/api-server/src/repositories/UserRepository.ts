@@ -17,16 +17,36 @@ export class UserRepository {
   }
 
   async findByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.email, email));
-    return user;
+    try {
+      const [user] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.email, email));
+      return user;
+    } catch (error: any) {
+      // Unmasks the raw Postgres driver error
+      console.error("🚨 DATABASE ERROR in findByEmail:", {
+        message: error.message,
+        code: error.code,       // This is the crucial part (e.g., '42P01', '28000')
+        detail: error.detail,
+        routine: error.routine
+      });
+      throw error;
+    }
   }
 
   async create(data: InsertUser): Promise<User> {
-    const [user] = await db.insert(usersTable).values(data).returning();
-    return user!;
+    try {
+      const [user] = await db.insert(usersTable).values(data).returning();
+      return user!;
+    } catch (error: any) {
+      console.error("🚨 DATABASE ERROR in create:", {
+        message: error.message,
+        code: error.code,
+        detail: error.detail,
+      });
+      throw error;
+    }
   }
 
   async update(
