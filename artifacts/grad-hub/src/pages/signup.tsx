@@ -290,7 +290,7 @@ export default function Signup() {
                   </div>
                 )}
                 <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 border rounded-md bg-muted/30">
-                  {(allSkills as string[]).filter((s) => !selectedSkills.includes(s)).map((skill) => (
+                  {((allSkills as string[]) || []).filter((s) => !selectedSkills.includes(s)).map((skill) => (
                     <Badge key={skill} variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors text-xs" onClick={() => toggleSkill(skill)}>
                       {skill}
                     </Badge>
