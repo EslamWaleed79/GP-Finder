@@ -29,7 +29,7 @@ export default function UserDetail() {
   const sendConnection = useSendConnection({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(id) });
+        queryClient.invalidateQueries();
       },
     },
   });
