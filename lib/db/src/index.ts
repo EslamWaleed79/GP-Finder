@@ -12,7 +12,12 @@ const client = postgres(connectionString, {
 });
 
 const pgAdapter = {
-  query: (text: string, params?: any[]) => client.unsafe(text, params),
+  query: (text: string, params?: any[]) => {
+    const sanitizedParams = params?.map((p) =>
+      typeof p === 'object' && p !== null && !Array.isArray(p) ? JSON.stringify(p) : p,
+    );
+    return client.unsafe(text, sanitizedParams);
+  },
 };
 
 export const db = drizzle(client, { schema });
