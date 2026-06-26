@@ -1,24 +1,15 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
-import * as schema from "./schema";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from './schema'; // Keep your exact schema import path
 
-const { Pool } = pg;
+// Grab the connection string from environment variables
+const connectionString = process.env.DATABASE_URL!;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
-
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL?.split("?")[0],
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+// Configuration designed explicitly to play nicely with Supabase's transaction pooler
+const client = postgres(connectionString, {
+  prepare: false, // CRITICAL: This stops the PgBouncer / prepared statements crash
+  ssl: 'require', // Enforces secure SSL handshake cleanly
+  max: 10,        // Keeps connection counts safe under the Nano tier limit
 });
-export const db = drizzle(pool, { schema });
 
-export * from "./schema";
+export const db = drizzle(client, { schema });
