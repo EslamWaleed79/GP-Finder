@@ -60,6 +60,7 @@ app.use(
       secure: true,
       sameSite: "none",
       httpOnly: true,
+      domain: ".railway.app",
       maxAge: 1000 * 60 * 60 * 24,
     },
   }),
