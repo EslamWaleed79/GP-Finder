@@ -79,27 +79,17 @@ router.post("/auth/login", (async (req, res) => {
     return res.status(401).json({ error: "Invalid credentials" });
   }
 
-  return req.session.regenerate((err) => {
+  req.session.userId = user.id;
+  req.session.email = user.email;
+
+  return req.session.save((err) => {
     if (err) {
-      console.error("Session regenerate error:", err);
+      console.error("Session save error:", err);
       return res.status(500).json({ error: "Session error" });
     }
 
-    req.session.userId = user.id;
-    req.session.email = user.email;
-
-    const strategy = new SelfViewStrategy();
-    const view = strategy.buildView(user, "none");
-
-    return req.session.save((saveErr) => {
-      if (saveErr) {
-        console.error("Session save error:", saveErr);
-        return res.status(500).json({ error: "Session error" });
-      }
-
-      console.log("Login successful - SessionID:", req.sessionID, "userId:", req.session.userId);
-      return res.json(view);
-    });
+    console.log("Login OK - SID:", req.sessionID, "userId:", user.id);
+    return res.json({ success: true });
   });
 }) as RequestHandler);
 
