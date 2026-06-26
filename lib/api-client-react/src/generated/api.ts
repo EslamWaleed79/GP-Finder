@@ -68,7 +68,7 @@ export const useHealthCheck = <TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
-export const getSignupUrl = () => `${import.meta.env.VITE_API_URL}/api/auth/signup`;
+export const getSignupUrl = () => `${import.meta.env.VITE_API_URL}/v/signup`;
 
 export const signup = async (signupInput: BodyType<SignupInput>, options?: RequestInit): Promise<ProfileView> =>
   customFetch<ProfileView>(getSignupUrl(), { ...options, method: 'POST', headers: { 'Content-Type': 'application/json', ...options?.headers }, body: JSON.stringify(signupInput) });
