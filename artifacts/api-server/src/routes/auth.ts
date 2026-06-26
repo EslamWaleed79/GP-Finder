@@ -83,7 +83,13 @@ router.post("/auth/login", (async (req, res) => {
 
   const strategy = new SelfViewStrategy();
   const view = strategy.buildView(user, "none");
-  return res.json(view);
+  return req.session.save((err) => {
+    if (err) {
+      console.error("Session save error:", err);
+      return res.status(500).json({ error: "Failed to save session" });
+    }
+    return res.json(view);
+  });
 }) as RequestHandler);
 
 router.post("/auth/logout", (async (req, res) => {
