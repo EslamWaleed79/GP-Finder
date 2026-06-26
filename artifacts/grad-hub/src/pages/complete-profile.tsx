@@ -76,8 +76,9 @@ export default function CompleteProfile() {
 
   const updateProfile = useUpdateProfile({
     mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      onSuccess: async (updatedUser) => {
+        queryClient.setQueryData(getGetMeQueryKey(), updatedUser);
+        await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
         toast({ title: "Profile completed!" });
         setLocation("/dashboard");
       },

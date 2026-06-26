@@ -7,6 +7,10 @@ if (!JWT_SECRET) {
 }
 
 export const jwtAuth: RequestHandler = (req, res, next) => {
+  if (!(req as any).session) {
+    (req as any).session = {};
+  }
+
   const authHeader = req.headers["authorization"] as string | undefined;
   const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
 
@@ -17,9 +21,6 @@ export const jwtAuth: RequestHandler = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
     (req as any).userId = decoded.userId;
-    if (!(req as any).session) {
-      (req as any).session = {};
-    }
     (req as any).session.userId = decoded.userId;
     return next();
   } catch (error) {

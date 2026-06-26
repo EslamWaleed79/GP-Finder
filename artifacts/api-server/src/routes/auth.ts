@@ -97,7 +97,7 @@ router.post("/auth/logout", (async (_, res) => {
 }) as RequestHandler);
 
 router.get("/auth/me", (async (req, res) => {
-  const userId = (req as any).userId ?? req.session?.userId;
+  const userId = (req as any).userId ?? (req as any).session?.userId;
 
   if (!userId) {
     return res.status(401).json({ error: "Not authenticated" });
@@ -109,12 +109,10 @@ router.get("/auth/me", (async (req, res) => {
       return res.status(401).json({ error: "User not found" });
     }
 
-    return res.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    });
+    const strategy = new SelfViewStrategy();
+    const view = strategy.buildView(user, "none");
+
+    return res.json(view);
   } catch (error) {
     console.error("/auth/me error:", error);
     return res.status(500).json({ error: "Server error" });
