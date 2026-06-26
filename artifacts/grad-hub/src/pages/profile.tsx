@@ -39,10 +39,10 @@ const EGYPTIAN_PHONE_RE = /^01[0-2,5]{1}[0-9]{8}$/;
 const profileSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters"),
-    track: z.enum(TRACKS, { required_error: "Track is required" }),
+    track: z.enum(TRACKS, { errorMap: () => ({ message: "Please select a track" }) }),
     customTrack: z.string().optional(),
-    bylaw: z.enum(["2018", "2023"] as const, { required_error: "Bylaw is required" }),
-    gender: z.enum(["Male", "Female"] as const, { required_error: "Gender is required" }),
+    bylaw: z.enum(["2018", "2023"] as const, { errorMap: () => ({ message: "Please select a bylaw" }) }),
+    gender: z.enum(["Male", "Female"] as const, { errorMap: () => ({ message: "Please select a gender" }) }),
     gpa: z.coerce
       .number()
       .min(0)
@@ -52,6 +52,11 @@ const profileSchema = z
     phone: z
       .string()
       .regex(EGYPTIAN_PHONE_RE, "Must be a valid Egyptian mobile number")
+      .optional()
+      .or(z.literal("")),
+    cvLink: z
+      .string()
+      .url("Please enter a valid Google Drive or web URL")
       .optional()
       .or(z.literal("")),
     skills: z.array(z.string()).min(1, "Select at least one skill"),
@@ -75,7 +80,7 @@ export default function Profile() {
       onSuccess: async (updatedUser) => {
         queryClient.setQueryData(getGetMeQueryKey(), updatedUser);
         await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-        toast({ title: "Profile updated successfully" });
+        toast({ title: "Profile updated successfully", duration: 2000 });
       },
       onError: (err: any) => {
         toast({ title: "Update failed", description: err?.message, variant: "destructive" });
@@ -93,6 +98,7 @@ export default function Profile() {
       gender: undefined,
       gpa: undefined as any,
       phone: "",
+      cvLink: "",
       skills: [],
       bio: "",
     },
@@ -108,6 +114,7 @@ export default function Profile() {
         gender: (me.gender as any) ?? undefined,
         gpa: me.gpa ?? undefined,
         phone: me.phone ?? "",
+        cvLink: me.cvLink ?? "",
         skills: me.skills ?? [],
         bio: me.bio ?? "",
       });
@@ -128,6 +135,7 @@ export default function Profile() {
         gender: data.gender,
         gpa: data.gpa ? Number(data.gpa) : null,
         phone: data.phone || null,
+        cvLink: data.cvLink || null,
         skills: data.skills,
         bio: data.bio || null,
       },
@@ -257,6 +265,17 @@ export default function Profile() {
                   <p className="text-sm text-destructive">{form.formState.errors.phone.message as string}</p>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>CV / Resume Link (Google Drive)</Label>
+              <Input
+                {...form.register("cvLink")}
+                placeholder="https://drive.google.com/..."
+              />
+              {form.formState.errors.cvLink && (
+                <p className="text-sm text-destructive">{form.formState.errors.cvLink.message as string}</p>
+              )}
             </div>
 
             {/* Skills */}

@@ -23,7 +23,7 @@ export default function VerifyEmail() {
   const verifyEmail = useVerifyEmail({
     mutation: {
       onSuccess: () => {
-        toast({ title: "Email verified successfully" });
+        toast({ title: "Email verified successfully", duration: 2000 });
         if (typeof window !== "undefined") {
           window.localStorage.removeItem("pendingVerificationEmail");
         }

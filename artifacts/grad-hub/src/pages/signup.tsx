@@ -56,10 +56,10 @@ const step1Schema = z.object({
 
 const step2Schema = z
   .object({
-    track: z.enum(TRACKS, { required_error: "Track is required" }),
+    track: z.enum(TRACKS, { errorMap: () => ({ message: "Please select a track" }) }),
     customTrack: z.string().optional(),
-    bylaw: z.enum(["2018", "2023"] as const, { required_error: "Bylaw is required" }),
-    gender: z.enum(["Male", "Female"] as const, { required_error: "Gender is required" }),
+    bylaw: z.enum(["2018", "2023"] as const, { errorMap: () => ({ message: "Please select a bylaw" }) }),
+    gender: z.enum(["Male", "Female"] as const, { errorMap: () => ({ message: "Please select a gender" }) }),
     gpa: z.coerce
       .number({ invalid_type_error: "GPA must be a number" })
       .min(0, "GPA must be ≥ 0.0")
@@ -92,9 +92,15 @@ export default function Signup() {
         if (data?.token) {
           localStorage.setItem("token", data.token);
         }
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(
+            "pendingVerificationEmail",
+            data?.user?.email ?? step1Data?.email ?? ""
+          );
+        }
 
         queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-        setLocation("/dashboard");
+        setLocation("/verify-email");
       },
       onError: (err: any) => {
         toast({
@@ -127,6 +133,9 @@ export default function Signup() {
 
   const onStep1Submit = (data: Step1Data) => {
     setStep1Data(data);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("pendingVerificationEmail", data.email);
+    }
     setStep(2);
   };
 
