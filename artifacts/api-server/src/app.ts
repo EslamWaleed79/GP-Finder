@@ -51,6 +51,8 @@ app.use(
     store: new PgSession({
       pool: sessionPool,
       tableName: "session",
+      createTableIfMissing: true,
+      pruneSessionInterval: false,
     }),
     secret: process.env.SESSION_SECRET ?? "grad-hub-secret-change-in-production",
     resave: false,
