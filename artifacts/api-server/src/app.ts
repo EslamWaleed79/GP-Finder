@@ -50,6 +50,7 @@ app.use(
     secret: process.env.SESSION_SECRET ?? "grad-hub-secret-change-in-production",
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
       secure: true,
       sameSite: "none",
