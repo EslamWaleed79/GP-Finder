@@ -8,6 +8,8 @@ import { logger } from "./lib/logger.js";
 import { sessionPool } from "@workspace/db";
 import { runSeed } from "./seed.js";
 
+const frontendOrigin = process.env.FRONTEND_URL ?? "https://your-frontend-url.vercel.app";
+
 const PgSession = connectPgSimple(session);
 
 const app: Express = express();
@@ -34,7 +36,10 @@ app.use(
 
 app.use(
   cors({
-    origin: true,
+    origin: [
+      'https://workspacegrad-hub-production.up.railway.app',
+      'https://workspaceapi-server-production-9d0e.up.railway.app',
+    ],
     credentials: true,
   }),
 );
