@@ -17,6 +17,7 @@ export class UserRepository {
   }
 
   async findByEmail(email: string): Promise<User | undefined> {
+    console.log("Busting build cache to enforce postgres.js driver!");
     try {
       const [user] = await db
         .select()
