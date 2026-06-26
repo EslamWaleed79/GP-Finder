@@ -1,4 +1,4 @@
-import { useGetMe, logout } from "@workspace/api-client-react";
+import { useGetMe, useListNotifications, logout } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, User, Bell, GraduationCap } from "lucide-react";
@@ -6,6 +6,8 @@ import { Button } from "./ui/button";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { data: me } = useGetMe();
+  const { data: notifications = [] } = useListNotifications({ query: { refetchInterval: 30000 } });
+  const unreadCount = notifications.filter((notification) => !notification.read).length;
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
@@ -39,8 +41,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Link href="/connections" className={`hover:text-primary transition-colors ${location === '/connections' ? 'text-primary' : 'text-muted-foreground'}`}>
               Connections
             </Link>
-            <Link href="/notifications" className={`hover:text-primary transition-colors ${location === '/notifications' ? 'text-primary' : 'text-muted-foreground'}`}>
+            <Link href="/notifications" className={`relative flex items-center gap-2 hover:text-primary transition-colors ${location === '/notifications' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Bell className="w-5 h-5" />
               Notifications
+              {unreadCount > 0 && (
+                <span className="absolute top-0 right-0 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 text-[10px] font-bold leading-none text-white bg-red-600 rounded-full -translate-y-1/2 translate-x-1/2">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Link>
             {me.role === "admin" && (
               <Link href="/admin" className={`hover:text-primary transition-colors ${location === '/admin' ? 'text-primary' : 'text-muted-foreground'}`}>

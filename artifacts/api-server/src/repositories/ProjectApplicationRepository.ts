@@ -67,6 +67,7 @@ export class ProjectApplicationRepository {
     ok: boolean;
     error?: string;
     application?: ProjectApplication;
+    connectedTeamMemberIds?: number[];
   }> {
     const [app] = await db
       .select()
@@ -133,7 +134,10 @@ export class ProjectApplicationRepository {
 
     // Connection bridge: accept → create/update connect request to 'accepted'
     if (action === "accepted") {
-      await this._upsertConnection(app.applicantId, leaderId, "accepted");
+      await this._upsertConnection(app.applicantId, leaderId, "accepted", app.projectId);
+      const connectedTeamMemberIds = await this._connectNewMemberWithTeam(app.applicantId, app.projectId);
+      await this._syncProjectStatus(app.projectId);
+      return { ok: true, application: updated!, connectedTeamMemberIds };
     }
 
     // Revocation: left or removed → set connection to declined
@@ -144,6 +148,29 @@ export class ProjectApplicationRepository {
     await this._syncProjectStatus(app.projectId);
 
     return { ok: true, application: updated! };
+  }
+
+  private async _connectNewMemberWithTeam(
+    newMemberId: number,
+    projectId: number
+  ): Promise<number[]> {
+    const rows = await db
+      .select({ memberId: projectApplicationsTable.applicantId })
+      .from(projectApplicationsTable)
+      .where(
+        and(
+          eq(projectApplicationsTable.projectId, projectId),
+          eq(projectApplicationsTable.status, "accepted"),
+          sql`${projectApplicationsTable.applicantId} != ${newMemberId}`
+        )
+      );
+
+    const connectedMemberIds: number[] = [];
+    for (const row of rows) {
+      await this._upsertConnection(newMemberId, row.memberId, "accepted", projectId);
+      connectedMemberIds.push(row.memberId);
+    }
+    return connectedMemberIds;
   }
 
   async leave(
@@ -334,7 +361,8 @@ export class ProjectApplicationRepository {
   private async _upsertConnection(
     userId1: number,
     userId2: number,
-    status: "accepted" | "declined"
+    status: "accepted" | "declined",
+    projectId?: number | null
   ): Promise<void> {
     const [existing] = await db
       .select()
@@ -348,12 +376,12 @@ export class ProjectApplicationRepository {
     if (existing) {
       await db
         .update(connectRequestsTable)
-        .set({ status })
+        .set({ status, projectId: projectId ?? null })
         .where(eq(connectRequestsTable.id, existing.id));
     } else {
       await db
         .insert(connectRequestsTable)
-        .values({ senderId: userId1, recipientId: userId2, status });
+        .values({ senderId: userId1, recipientId: userId2, status, projectId: projectId ?? null });
     }
   }
 }

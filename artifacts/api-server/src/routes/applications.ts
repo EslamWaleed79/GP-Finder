@@ -108,7 +108,16 @@ router.patch("/applications/:id", (async (req, res) => {
       removed: `You were removed from the project "${project.title}".`,
     };
     await notificationService.notifyRaw(app.applicantId, msgMap[action]);
-  }
+    if (action === "accepted" && result.connectedTeamMemberIds?.length) {
+      await Promise.all(
+        result.connectedTeamMemberIds.map((memberId) =>
+          notificationService.notifyRaw(
+            memberId,
+            `${leader.name} accepted a new teammate for "${project.title}" and you're now connected.`
+          )
+        )
+      );
+    }  }
 
   return res.json(result.application);
 }) as RequestHandler);
