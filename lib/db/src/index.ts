@@ -11,6 +11,10 @@ const client = postgres(connectionString, {
   max: 10,        
 });
 
+const pgAdapter = {
+  query: (text: string, params?: any[]) => client.unsafe(text, params),
+};
+
 export const db = drizzle(client, { schema });
 
 // --- THE FIX ---
@@ -18,4 +22,5 @@ export const db = drizzle(client, { schema });
 export * from './schema'; 
 
 // 2. Export the client as 'pool' to satisfy app.ts
-export const pool = client; 
+export const pool = client;
+export const sessionPool = pgAdapter;

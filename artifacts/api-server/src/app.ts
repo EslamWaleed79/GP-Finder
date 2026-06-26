@@ -5,7 +5,7 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
-import { pool } from "@workspace/db";
+import { sessionPool } from "@workspace/db";
 import { runSeed } from "./seed.js";
 
 const PgSession = connectPgSimple(session);
@@ -44,7 +44,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   session({
     store: new PgSession({
-      pool,
+      pool: sessionPool,
       tableName: "session",
     }),
     secret: process.env.SESSION_SECRET ?? "grad-hub-secret-change-in-production",
