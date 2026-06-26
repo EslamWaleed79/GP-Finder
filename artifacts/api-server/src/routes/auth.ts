@@ -2,10 +2,8 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { UserValidationService } from "../services/UserValidationService.js";
-import {
-  SelfViewStrategy,
-  PublicViewStrategy,
-} from "../services/strategies/ContactVisibilityStrategy.js";
+import { SelfViewStrategy, PublicViewStrategy } from "../services/strategies/ContactVisibilityStrategy.js";
+import { signJwt } from "../lib/jwt.js";
 import type { RequestHandler } from "express";
 
 const router = Router();
@@ -52,11 +50,11 @@ router.post("/auth/signup", (async (req, res) => {
     role: "student",
   });
 
-  req.session.userId = user.id;
-
   const strategy = new SelfViewStrategy();
   const view = strategy.buildView(user, "none");
-  return res.status(201).json(view);
+  const token = signJwt({ userId: user.id, email: user.email, role: user.role });
+
+  return res.status(201).json({ token, user: view });
 }) as RequestHandler);
 
 router.post("/auth/login", (async (req, res) => {
@@ -79,40 +77,27 @@ router.post("/auth/login", (async (req, res) => {
     return res.status(401).json({ error: "Invalid credentials" });
   }
 
-  req.session.userId = user.id;
-  req.session.email = user.email;
+  const strategy = new SelfViewStrategy();
+  const view = strategy.buildView(user, "none");
+  const token = signJwt({ userId: user.id, email: user.email, role: user.role });
 
-  return req.session.save((err) => {
-    if (err) {
-      console.error("Session save error:", err);
-      return res.status(500).json({ error: "Session error" });
-    }
-
-    console.log("Login OK - SID:", req.sessionID, "userId:", user.id);
-    return res.json({ success: true });
-  });
+  console.log("Login OK - userId:", user.id);
+  return res.json({ token, user: view });
 }) as RequestHandler);
 
-router.post("/auth/logout", (async (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Logout error:", err);
-      return res.status(500).json({ error: "Logout failed" });
-    }
-    return res.json({ success: true });
-  });
+router.post("/auth/logout", (async (_, res) => {
+  return res.json({ success: true });
 }) as RequestHandler);
 
 router.get("/auth/me", (async (req, res) => {
-  console.log("ME - SessionID:", req.sessionID);
-  console.log("ME - Full session:", req.session);
+  const userId = (req as any).userId ?? req.session?.userId;
 
-  if (!req.session?.userId) {
+  if (!userId) {
     return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const user = await userRepo.findById(req.session.userId);
+    const user = await userRepo.findById(userId);
     if (!user) {
       return res.status(401).json({ error: "User not found" });
     }

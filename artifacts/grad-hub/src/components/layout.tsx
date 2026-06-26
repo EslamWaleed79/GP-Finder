@@ -1,4 +1,4 @@
-import { useGetMe } from "@workspace/api-client-react";
+import { useGetMe, logout } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, User, Bell, GraduationCap } from "lucide-react";
@@ -12,7 +12,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   if (!me) return <>{children}</>;
 
   const handleLogout = async () => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, { method: "POST" });
+    try {
+      await logout();
+    } catch {
+      // Ignore logout failures and still clear local state.
+    }
+
+    localStorage.removeItem("token");
     queryClient.invalidateQueries();
     setLocation("/login");
   };

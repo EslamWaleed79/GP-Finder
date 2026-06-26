@@ -23,7 +23,11 @@ export default function Login() {
   
   const login = useLogin({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data: any) => {
+        if (data?.token) {
+          localStorage.setItem("token", data.token);
+        }
+
         queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
         setLocation("/dashboard");
       },

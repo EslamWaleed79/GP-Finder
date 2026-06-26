@@ -88,7 +88,11 @@ export default function Signup() {
 
   const signup = useSignup({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data: any) => {
+        if (data?.token) {
+          localStorage.setItem("token", data.token);
+        }
+
         queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
         setLocation("/dashboard");
       },
