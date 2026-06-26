@@ -220,6 +220,30 @@ export const getProject = async (id: number, options?: RequestInit): Promise<Pro
 
 export const getGetProjectQueryKey = (id: number) => [getGetProjectUrl(id)] as const;
 
+export const getLeaveProjectUrl = (id: number) => `/api/projects/${id}/leave`;
+
+export const leaveProject = async (id: number, options?: RequestInit): Promise<MessageResponse> =>
+  customFetch<MessageResponse>(getLeaveProjectUrl(id), { ...options, method: 'DELETE' });
+
+export const useLeaveProject = <TError = ErrorType<ApiError>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof leaveProject>>, TError, { id: number }, TContext> }
+): UseMutationResult<Awaited<ReturnType<typeof leaveProject>>, TError, { id: number }, TContext> => {
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof leaveProject>>, { id: number }> = ({ id }) => leaveProject(id);
+  return useMutation<Awaited<ReturnType<typeof leaveProject>>, TError, { id: number }, TContext>({ mutationFn, ...options?.mutation });
+};
+
+export const getUpdateProjectStatusUrl = (id: number) => `/api/projects/${id}/status`;
+
+export const updateProjectStatus = async (id: number, status: BodyType<{ status: 'open' | 'in_progress' | 'closed' }>, options?: RequestInit): Promise<ProjectDetail> =>
+  customFetch<ProjectDetail>(getUpdateProjectStatusUrl(id), { ...options, method: 'PATCH', headers: { 'Content-Type': 'application/json', ...options?.headers }, body: JSON.stringify(status) });
+
+export const useUpdateProjectStatus = <TError = ErrorType<ApiError>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateProjectStatus>>, TError, { id: number; data: BodyType<{ status: 'open' | 'in_progress' | 'closed' }> }, TContext> }
+): UseMutationResult<Awaited<ReturnType<typeof updateProjectStatus>>, TError, { id: number; data: BodyType<{ status: 'open' | 'in_progress' | 'closed' }> }, TContext> => {
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateProjectStatus>>, { id: number; data: BodyType<{ status: 'open' | 'in_progress' | 'closed' }> }> = ({ id, data }) => updateProjectStatus(id, data);
+  return useMutation<Awaited<ReturnType<typeof updateProjectStatus>>, TError, { id: number; data: BodyType<{ status: 'open' | 'in_progress' | 'closed' }> }, TContext>({ mutationFn, ...options?.mutation });
+};
+
 export const useGetProject = <TData = Awaited<ReturnType<typeof getProject>>, TError = ErrorType<ApiError>>(
   id: number,
   options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getProject>>, TError, TData> }

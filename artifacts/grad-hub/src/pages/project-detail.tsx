@@ -4,8 +4,11 @@ import {
   useApplyToProject,
   useListProjectApplications,
   useDecideApplication,
+  useLeaveProject,
+  useUpdateProjectStatus,
   getGetProjectQueryKey,
   getListProjectApplicationsQueryKey,
+  getListProjectsQueryKey,
   useGetMe,
 } from "@workspace/api-client-react";
 import { useParams, useLocation, Link } from "wouter";
@@ -35,6 +38,7 @@ export default function ProjectDetail() {
   });
 
   const isLeader = me?.id === project?.leaderId;
+  const isMember = Boolean(project?.isMember);
 
   const { data: applications = [] } = useListProjectApplications(id, {
     query: { enabled: !!id && isLeader },
@@ -68,6 +72,31 @@ export default function ProjectDetail() {
     },
   });
 
+  const leaveProject = useLeaveProject({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
+        queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
+        toast({ title: "You left the project" });
+      },
+      onError: (err: any) => {
+        toast({ title: "Error", description: err?.message, variant: "destructive" });
+      },
+    },
+  });
+
+  const updateProjectStatus = useUpdateProjectStatus({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
+        toast({ title: "Project status updated" });
+      },
+      onError: (err: any) => {
+        toast({ title: "Error", description: err?.message, variant: "destructive" });
+      },
+    },
+  });
+
   if (isLoading) return <div>Loading project...</div>;
   if (!project) return <div>Project not found</div>;
 
@@ -90,6 +119,11 @@ export default function ProjectDetail() {
             <Badge variant={statusVariant(project.status) as any} className="capitalize">
               {project.status.replace("_", " ")}
             </Badge>
+            {(isMember || isLeader) && (
+              <Badge variant="secondary" className="bg-green-600 text-white">
+                {isLeader ? "My Project" : "Joined"}
+              </Badge>
+            )}
             {project.track && (
               <Badge variant="outline">{trackBadgeText(project.track)}</Badge>
             )}
@@ -105,6 +139,15 @@ export default function ProjectDetail() {
               <Button variant="outline" asChild>
                 <Link href={`/projects/${id}/edit`}>Edit</Link>
               </Button>
+              {project.status !== "closed" && (
+                <Button
+                  variant="outline"
+                  onClick={() => updateProjectStatus.mutate({ id, data: { status: "closed" } })}
+                  disabled={updateProjectStatus.isPending}
+                >
+                  {updateProjectStatus.isPending ? "Closing..." : "Close Project"}
+                </Button>
+              )}
               <Button
                 variant="destructive"
                 onClick={() => { if (confirm("Delete this project?")) deleteProject.mutate({ id }); }}
@@ -115,6 +158,15 @@ export default function ProjectDetail() {
             </>
           ) : (
             <>
+              {isMember && !isLeader && (
+                <Button
+                  variant="destructive"
+                  onClick={() => leaveProject.mutate({ id })}
+                  disabled={leaveProject.isPending}
+                >
+                  {leaveProject.isPending ? "Leaving..." : "Leave Project"}
+                </Button>
+              )}
               {project.canApply && (
                 <Button
                   onClick={() => applyToProject.mutate({ data: { projectId: project.id } })}

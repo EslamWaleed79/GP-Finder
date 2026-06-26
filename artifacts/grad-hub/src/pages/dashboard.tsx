@@ -140,9 +140,16 @@ export default function Dashboard() {
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="text-lg line-clamp-1">{project.title}</CardTitle>
-                      <Badge variant={statusVariant(project.status)} className="shrink-0 capitalize text-[10px]">
-                        {project.status.replace("_", " ")}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={statusVariant(project.status)} className="shrink-0 capitalize text-[10px]">
+                          {project.status.replace("_", " ")}
+                        </Badge>
+                        {(project.isMember || me?.id === project.leaderId) && (
+                          <Badge variant="secondary" className="shrink-0 text-[10px] bg-green-600 text-white">
+                            {me?.id === project.leaderId ? "My Project" : "Joined"}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     {project.track && (
                       <Badge variant="outline" className="w-fit text-[10px]">

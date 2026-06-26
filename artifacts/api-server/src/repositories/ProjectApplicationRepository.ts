@@ -134,19 +134,14 @@ export class ProjectApplicationRepository {
     // Connection bridge: accept → create/update connect request to 'accepted'
     if (action === "accepted") {
       await this._upsertConnection(app.applicantId, leaderId, "accepted");
-      // First accepted → move project to in_progress
-      if (project.status === "open") {
-        await db
-          .update(projectsTable)
-          .set({ status: "in_progress" })
-          .where(eq(projectsTable.id, app.projectId));
-      }
     }
 
     // Revocation: left or removed → set connection to declined
     if (action === "removed") {
       await this._upsertConnection(app.applicantId, leaderId, "declined");
     }
+
+    await this._syncProjectStatus(app.projectId);
 
     return { ok: true, application: updated! };
   }
@@ -180,6 +175,60 @@ export class ProjectApplicationRepository {
       await this._upsertConnection(applicantId, project.leaderId, "declined");
     }
 
+    await this._syncProjectStatus(app.projectId);
+    return { ok: true, application: updated! };
+  }
+
+  async isMemberOfProject(userId: number, projectId: number): Promise<boolean> {
+    const [row] = await db
+      .select({ id: projectApplicationsTable.id })
+      .from(projectApplicationsTable)
+      .where(
+        and(
+          eq(projectApplicationsTable.applicantId, userId),
+          eq(projectApplicationsTable.projectId, projectId),
+          eq(projectApplicationsTable.status, "accepted")
+        )
+      )
+      .limit(1);
+    return Boolean(row);
+  }
+
+  async leaveProject(
+    applicantId: number,
+    projectId: number
+  ): Promise<{ ok: boolean; error?: string; application?: ProjectApplication }> {
+    const [app] = await db
+      .select()
+      .from(projectApplicationsTable)
+      .where(
+        and(
+          eq(projectApplicationsTable.applicantId, applicantId),
+          eq(projectApplicationsTable.projectId, projectId),
+          eq(projectApplicationsTable.status, "accepted")
+        )
+      )
+      .limit(1);
+    if (!app) {
+      return { ok: false, error: "You are not currently a member of this project" };
+    }
+
+    const [updated] = await db
+      .update(projectApplicationsTable)
+      .set({ status: "left", decidedAt: new Date() })
+      .where(eq(projectApplicationsTable.id, app.id))
+      .returning();
+
+    const [project] = await db
+      .select()
+      .from(projectsTable)
+      .where(eq(projectsTable.id, projectId))
+      .limit(1);
+    if (project?.leaderId) {
+      await this._upsertConnection(applicantId, project.leaderId, "declined");
+    }
+
+    await this._syncProjectStatus(projectId);
     return { ok: true, application: updated! };
   }
 
@@ -246,6 +295,40 @@ export class ProjectApplicationRepository {
         .filter((a) => a.status === "pending")
         .map((a) => a.projectId),
     };
+  }
+
+  private async _syncProjectStatus(projectId: number): Promise<void> {
+    const [project] = await db
+      .select()
+      .from(projectsTable)
+      .where(eq(projectsTable.id, projectId))
+      .limit(1);
+    if (!project) return;
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(projectApplicationsTable)
+      .where(
+        and(
+          eq(projectApplicationsTable.projectId, projectId),
+          eq(projectApplicationsTable.status, "accepted")
+        )
+      );
+
+    const memberCount = Number(count);
+    const nextStatus =
+      memberCount >= project.maxMembers
+        ? "closed"
+        : memberCount > 0
+          ? "in_progress"
+          : "open";
+
+    if (project.status !== nextStatus) {
+      await db
+        .update(projectsTable)
+        .set({ status: nextStatus })
+        .where(eq(projectsTable.id, projectId));
+    }
   }
 
   private async _upsertConnection(

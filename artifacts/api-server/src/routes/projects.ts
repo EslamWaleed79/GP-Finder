@@ -38,16 +38,19 @@ router.get("/projects", (async (req, res) => {
       const connectStatus = viewerId
         ? await userRepo.getConnectionStatus(viewerId, p.ownerId)
         : "none";
+      const isLeader = viewerId === p.leaderId;
+      const isMember = viewerId ? await appRepo.isMemberOfProject(viewerId, p.id) : false;
       const canApply =
         viewerId !== undefined &&
-        viewerId !== p.leaderId &&
+        !isLeader &&
+        !isMember &&
         p.status === "open" &&
         p.memberCount < p.maxMembers &&
         viewerAppStatus !== null &&
         !viewerAppStatus.isLeader &&
         !viewerAppStatus.hasAcceptedApp &&
         !viewerAppStatus.pendingProjectIds.includes(p.id);
-      return { ...p, connectStatus, canApply };
+      return { ...p, connectStatus, canApply, isLeader, isMember };
     })
   );
 
@@ -97,7 +100,59 @@ router.post("/projects", (async (req, res) => {
     track: track as any ?? null,
   });
 
-  return res.status(201).json({ ...project, connectStatus: "none", canApply: false });
+  return res.status(201).json({ ...project, connectStatus: "none", canApply: false, isLeader: true, isMember: false });
+}) as RequestHandler);
+
+router.delete("/projects/:id/leave", (async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const existing = await projectRepo.findById(id);
+  if (!existing) return res.status(404).json({ error: "Project not found" });
+
+  if (existing.leaderId === req.session.userId) {
+    return res.status(400).json({ error: "Leaders cannot leave their own project. Delete it or transfer ownership." });
+  }
+
+  const result = await appRepo.leaveProject(req.session.userId, id);
+  if (!result.ok) {
+    return res.status(400).json({ error: result.error });
+  }
+
+  return res.json({ message: "Successfully left the project" });
+}) as RequestHandler);
+
+router.patch("/projects/:id/status", (async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const existing = await projectRepo.findById(id);
+  if (!existing) return res.status(404).json({ error: "Project not found" });
+
+  const viewer = await userRepo.findById(req.session.userId);
+  if (existing.leaderId !== req.session.userId && viewer?.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  const { status } = req.body as { status?: "open" | "in_progress" | "closed" };
+  if (!status || !["open", "in_progress", "closed"].includes(status)) {
+    return res.status(400).json({ error: "status must be open|in_progress|closed" });
+  }
+
+  if (status === "open" && existing.status !== "open") {
+    return res.status(400).json({ error: "Status cannot be changed back to Open" });
+  }
+
+  const updated = await projectRepo.update(id, { status });
+  return res.json({ ...updated, connectStatus: "none", canApply: false, isLeader: true, isMember: false });
 }) as RequestHandler);
 
 router.get("/projects/:id", (async (req, res) => {
@@ -116,9 +171,12 @@ router.get("/projects/:id", (async (req, res) => {
     ? await appRepo.getApplicationStatus(viewerId)
     : null;
 
+  const isLeader = viewerId === project.leaderId;
+  const isMember = viewerId ? await appRepo.isMemberOfProject(viewerId, project.id) : false;
   const canApply =
     viewerId !== undefined &&
-    viewerId !== project.leaderId &&
+    !isLeader &&
+    !isMember &&
     project.status === "open" &&
     project.memberCount < project.maxMembers &&
     viewerAppStatus !== null &&
@@ -126,7 +184,7 @@ router.get("/projects/:id", (async (req, res) => {
     !viewerAppStatus.hasAcceptedApp &&
     !viewerAppStatus.pendingProjectIds.includes(project.id);
 
-  return res.json({ ...project, connectStatus, canApply });
+  return res.json({ ...project, connectStatus, canApply, isLeader, isMember });
 }) as RequestHandler);
 
 router.patch("/projects/:id", (async (req, res) => {
@@ -179,7 +237,7 @@ router.patch("/projects/:id", (async (req, res) => {
     track: track as any,
   });
 
-  return res.json({ ...updated, connectStatus: "none", canApply: false });
+  return res.json({ ...updated, connectStatus: "none", canApply: false, isLeader: existing.leaderId === req.session.userId, isMember: false });
 }) as RequestHandler);
 
 router.delete("/projects/:id", (async (req, res) => {
