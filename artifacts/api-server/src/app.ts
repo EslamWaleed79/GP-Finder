@@ -30,17 +30,23 @@ app.use(
 
 app.use(
   cors({
-    origin: [
-      "https://workspacegrad-hub-production.up.railway.app",
-      "https://workspaceapi-server-production-9d0e.up.railway.app",
-    ],
-    credentials: false,
+    origin: 'https://workspacegrad-hub-production.up.railway.app', // EXACT frontend URL
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    optionsSuccessStatus: 204,
   }),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(jwtAuth);
 app.use("/api", router);
+
+app.use((err: any, req: any, res: any, next: any) => {
+  logger.error({ err }, "Global error");
+  console.error("Global error:", err);
+  res.status(500).json({ error: "Internal server error" });
+});
 
 runSeed().catch((err) => {
   logger.error({ err }, "Seed failed");

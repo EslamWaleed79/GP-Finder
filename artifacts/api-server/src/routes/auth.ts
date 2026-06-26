@@ -58,31 +58,38 @@ router.post("/auth/signup", (async (req, res) => {
 }) as RequestHandler);
 
 router.post("/auth/login", (async (req, res) => {
-  const { email, password } = req.body as {
-    email?: string;
-    password?: string;
-  };
+  try {
+    console.log("Login attempt:", req.body.email);
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
+    const { email, password } = req.body as {
+      email?: string;
+      password?: string;
+    };
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password required" });
+    }
+
+    const user = await userRepo.findByEmail(email.toLowerCase().trim());
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const strategy = new SelfViewStrategy();
+    const view = strategy.buildView(user, "none");
+    const token = signJwt({ userId: user.id, email: user.email, role: user.role });
+
+    console.log("Login success, token generated for user:", user.id);
+    return res.json({ token, user: view });
+  } catch (error) {
+    console.error("Login route error:", error);
+    return res.status(500).json({ error: "Server error during login" });
   }
-
-  const user = await userRepo.findByEmail(email.toLowerCase().trim());
-  if (!user) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
-
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
-
-  const strategy = new SelfViewStrategy();
-  const view = strategy.buildView(user, "none");
-  const token = signJwt({ userId: user.id, email: user.email, role: user.role });
-
-  console.log("Login OK - userId:", user.id);
-  return res.json({ token, user: view });
 }) as RequestHandler);
 
 router.post("/auth/logout", (async (_, res) => {
