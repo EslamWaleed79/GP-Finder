@@ -62,6 +62,10 @@ export const usersTable = pgTable("users", {
   customTrack: text("custom_track"),
   gender: genderEnum("gender"),
   role: userRoleEnum("role").notNull().default("student"),
+  cvLink: text("cv_link"),
+  isVerified: boolean("is_verified").notNull().default(false),
+  verificationCode: varchar("verification_code", { length: 6 }),
+  verificationExpires: timestamp("verification_expires"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

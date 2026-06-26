@@ -12,6 +12,7 @@ import Dashboard from "@/pages/dashboard";
 import Connections from "@/pages/connections";
 import Notifications from "@/pages/notifications";
 import Profile from "@/pages/profile";
+import VerifyEmail from "@/pages/verify-email";
 import Admin from "@/pages/admin";
 import ProjectDetail from "@/pages/project-detail";
 import UserDetail from "@/pages/user-detail";
@@ -84,6 +85,7 @@ function Router() {
 
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
+        <Route path="/verify-email" component={VerifyEmail} />
 
         <Route path="/complete-profile">
           <ProtectedRoute component={CompleteProfile} skipOnboardingCheck={true} />

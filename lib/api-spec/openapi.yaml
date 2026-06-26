@@ -98,6 +98,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
+  /auth/verify-email:
+    post:
+      operationId: verifyEmail
+      tags: [auth]
+      summary: Verify a signup email using a 6-digit code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                code:
+                  type: string
+                
+              required: [email, code]
+      responses:
+        "200":
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /auth/logout:
     post:
       operationId: logout
@@ -634,6 +667,15 @@ components:
         password:
           type: string
 
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/ProfileView"
+
     # ── Profile ─────────────────────────────────────────────────────────
     ProfileView:
       type: object
@@ -652,6 +694,9 @@ components:
             type: string
         bio:
           type: ["string", "null"]
+        cvLink:
+          type: ["string", "null"]
+          format: uri
         role:
           type: string
           enum: [student, admin]
@@ -680,6 +725,9 @@ components:
             type: string
         bio:
           type: ["string", "null"]
+        cvLink:
+          type: ["string", "null"]
+          format: uri
         role:
           type: string
           enum: [student, admin]
@@ -711,6 +759,9 @@ components:
           type: ["string", "null"]
         phone:
           type: ["string", "null"]
+        cvLink:
+          type: ["string", "null"]
+          format: uri
 
     # ── Project ─────────────────────────────────────────────────────────
     Project:

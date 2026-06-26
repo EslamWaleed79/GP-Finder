@@ -19,6 +19,7 @@ export interface ProfileViewResult {
   role: "student" | "admin";
   createdAt: Date;
   connectStatus: ConnectStatus;
+  cvLink?: string | null;
   // private fields — only present when connected or self
   email?: string | null;
   phone?: string | null;
@@ -44,6 +45,7 @@ export class PublicViewStrategy implements IContactVisibilityStrategy {
       role: user.role,
       createdAt: user.createdAt,
       connectStatus,
+      cvLink: user.cvLink ?? null,
     };
   }
 }
@@ -66,6 +68,7 @@ export class ConnectedViewStrategy implements IContactVisibilityStrategy {
       email: user.email,
       phone: user.phone ?? null,
       gpa: user.gpa ?? null,
+      cvLink: user.cvLink ?? null,
     };
   }
 }
@@ -89,6 +92,7 @@ export class SelfViewStrategy implements IContactVisibilityStrategy {
       email: user.email,
       phone: user.phone ?? null,
       gpa: user.gpa ?? null,
+      cvLink: user.cvLink ?? null,
     };
   }
 }

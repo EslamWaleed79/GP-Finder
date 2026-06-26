@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface MessageResponse {
-  message: string;
-}
+export type VerifyEmailBody = {
+  email: string;
+  code: string;
+};

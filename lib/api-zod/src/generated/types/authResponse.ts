@@ -5,7 +5,9 @@
  * GradHub API – student project & teammate finder for Ain Shams Engineering
  * OpenAPI spec version: 0.1.0
  */
+import type { ProfileView } from './profileView';
 
-export interface MessageResponse {
-  message: string;
+export interface AuthResponse {
+  token: string;
+  user: ProfileView;
 }

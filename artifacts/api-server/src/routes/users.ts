@@ -90,7 +90,7 @@ router.patch("/users/:id/profile", (async (req, res) => {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { name, skills, bio, phone, gpa, bylaw, track, customTrack, gender } =
+  const { name, skills, bio, phone, gpa, bylaw, track, customTrack, gender, cvLink } =
     req.body as {
       name?: string;
       skills?: string[];
@@ -101,6 +101,7 @@ router.patch("/users/:id/profile", (async (req, res) => {
       track?: string;
       customTrack?: string | null;
       gender?: "Male" | "Female";
+      cvLink?: string | null;
     };
 
   const updated = await userRepo.update(id, {
@@ -113,6 +114,7 @@ router.patch("/users/:id/profile", (async (req, res) => {
     track: track as any,
     customTrack,
     gender,
+    cvLink,
   });
   if (!updated) return res.status(404).json({ error: "User not found" });
 
