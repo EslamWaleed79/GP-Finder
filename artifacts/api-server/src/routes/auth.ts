@@ -79,36 +79,64 @@ router.post("/auth/login", (async (req, res) => {
     return res.status(401).json({ error: "Invalid credentials" });
   }
 
-  req.session.userId = user.id;
-
-  const strategy = new SelfViewStrategy();
-  const view = strategy.buildView(user, "none");
-  return req.session.save((err) => {
+  return req.session.regenerate((err) => {
     if (err) {
-      console.error("Session save error:", err);
-      return res.status(500).json({ error: "Failed to save session" });
+      console.error("Session regenerate error:", err);
+      return res.status(500).json({ error: "Session error" });
     }
-    return res.json(view);
+
+    req.session.userId = user.id;
+    req.session.email = user.email;
+
+    const strategy = new SelfViewStrategy();
+    const view = strategy.buildView(user, "none");
+
+    return req.session.save((saveErr) => {
+      if (saveErr) {
+        console.error("Session save error:", saveErr);
+        return res.status(500).json({ error: "Session error" });
+      }
+
+      console.log("Login successful - SessionID:", req.sessionID, "userId:", req.session.userId);
+      return res.json(view);
+    });
   });
 }) as RequestHandler);
 
 router.post("/auth/logout", (async (req, res) => {
-  req.session.destroy(() => {
-    res.json({ message: "Logged out" });
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Logout error:", err);
+      return res.status(500).json({ error: "Logout failed" });
+    }
+    return res.json({ success: true });
   });
 }) as RequestHandler);
 
 router.get("/auth/me", (async (req, res) => {
-  if (!req.session.userId) {
+  console.log("ME - SessionID:", req.sessionID);
+  console.log("ME - Full session:", req.session);
+
+  if (!req.session?.userId) {
     return res.status(401).json({ error: "Not authenticated" });
   }
-  const user = await userRepo.findById(req.session.userId);
-  if (!user) {
-    return res.status(401).json({ error: "Not authenticated" });
+
+  try {
+    const user = await userRepo.findById(req.session.userId);
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    return res.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    });
+  } catch (error) {
+    console.error("/auth/me error:", error);
+    return res.status(500).json({ error: "Server error" });
   }
-  const strategy = new SelfViewStrategy();
-  const view = strategy.buildView(user, "none");
-  return res.json(view);
 }) as RequestHandler);
 
 export default router;
