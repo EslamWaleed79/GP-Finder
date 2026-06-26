@@ -32,7 +32,7 @@ app.use(
   cors({
     origin: 'https://workspacegrad-hub-production.up.railway.app', // EXACT frontend URL
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     optionsSuccessStatus: 204,
   }),
