@@ -33,6 +33,7 @@ type PendingRegistrationPayload = {
   cvLink: string | null;
   otp: string;
   verificationAttempts: number;
+  verificationRequestedAt: number;
 };
 
 declare module "express-session" {
@@ -78,6 +79,7 @@ router.post("/auth/signup", (async (req, res) => {
     cvLink: payload.cvLink ? (payload.cvLink as string).trim() : null,
     otp,
     verificationAttempts: 0,
+    verificationRequestedAt: Date.now(),
   };
 
   const pendingRegistrationToken = signJwt(pendingRegistrationPayload, { expiresIn: "15m" });
@@ -143,69 +145,55 @@ router.post("/auth/verify-email", (async (req, res) => {
 }) as RequestHandler);
 
 router.post("/auth/resend-otp", (async (req, res) => {
-  const { email } = req.body as { email?: string };
+  const { pendingRegistrationToken } = req.body as { pendingRegistrationToken?: string };
 
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
+  if (!pendingRegistrationToken) {
+    return res.status(400).json({ error: "Pending registration token is required" });
   }
 
-  const normalizedEmail = email.toLowerCase().trim();
-  const user = await userRepo.findByEmail(normalizedEmail);
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
+  let decodedPayload: PendingRegistrationPayload;
+  try {
+    const decoded = jwt.verify(pendingRegistrationToken, JWT_SECRET) as unknown;
+    if (typeof decoded !== "object" || decoded === null || !("email" in decoded) || !("otp" in decoded)) {
+      throw new Error("Invalid pending registration token");
+    }
+    decodedPayload = decoded as PendingRegistrationPayload;
+  } catch {
+    return res.status(400).json({ error: "Invalid or expired registration token" });
   }
 
-  if (user.isVerified) {
-    return res.status(400).json({ error: "Account already verified" });
-  }
+  const now = Date.now();
+  const lastRequestedAt = decodedPayload.verificationRequestedAt ?? 0;
+  const nextAllowedRequestAt = lastRequestedAt + 60 * 1000;
 
-  const now = new Date();
-  const nextAllowedRequest = user.verificationRequestedAt
-    ? new Date(new Date(user.verificationRequestedAt).getTime() + 60 * 1000)
-    : new Date(0);
-
-  if (user.verificationAttempts >= 4) {
+  if (decodedPayload.verificationAttempts >= 4) {
     return res.status(429).json({ error: "Maximum OTP resend attempts exceeded. Contact support." });
   }
 
-  if (now < nextAllowedRequest) {
-    const waitSeconds = Math.ceil((nextAllowedRequest.getTime() - now.getTime()) / 1000);
+  if (now < nextAllowedRequestAt) {
+    const waitSeconds = Math.ceil((nextAllowedRequestAt - now) / 1000);
     return res.status(429).json({ error: `Please wait ${waitSeconds} seconds before requesting a new code.` });
   }
 
   const otp = crypto.randomInt(100000, 999999).toString().padStart(6, "0");
-  const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
-
-  const [updatedUser] = await db
-    .update(usersTable)
-    .set({
-      verificationCode: otp,
-      verificationExpires: expiresAt,
-      verificationRequestedAt: now,
-      verificationAttempts: (user.verificationAttempts || 0) + 1,
-    })
-    .where(
-      and(
-        eq(usersTable.id, user.id),
-        lt(usersTable.verificationAttempts, 4),
-        or(
-          isNull(usersTable.verificationRequestedAt),
-          lte(usersTable.verificationRequestedAt, new Date(now.getTime() - 60 * 1000)),
-        ),
-      ),
-    );
-
-  if (!updatedUser) {
-    return res.status(429).json({ error: "Unable to resend OTP at this time. Try again later." });
-  }
+  const refreshedPayload: PendingRegistrationPayload = {
+    ...decodedPayload,
+    otp,
+    verificationAttempts: decodedPayload.verificationAttempts + 1,
+    verificationRequestedAt: now,
+  };
+  const refreshedToken = signJwt(refreshedPayload, { expiresIn: "15m" });
 
   try {
-    await sendVerificationEmail(normalizedEmail, otp);
+    await sendVerificationEmail(decodedPayload.email, otp);
   } catch (err) {
     console.error("sendVerificationEmail failed:", err);
   }
 
-  return res.status(200).json({ message: "Verification email resent successfully." });
+  return res.status(200).json({
+    message: "Verification email resent successfully.",
+    pendingRegistrationToken: refreshedToken,
+  });
 }) as RequestHandler);
 
 router.post("/auth/login", (async (req, res) => {

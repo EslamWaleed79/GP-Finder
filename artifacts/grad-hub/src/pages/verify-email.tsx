@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLocation, Link } from "wouter";
+import { useMutation } from "@tanstack/react-query";
 import { useVerifyEmail } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,50 @@ export default function VerifyEmail() {
     },
   });
 
+  const resendOtpMutation = useMutation({
+    mutationFn: async () => {
+      if (typeof window === "undefined") {
+        throw new Error("Verification session is unavailable.");
+      }
+
+      const pendingRegistrationToken = window.sessionStorage.getItem("pendingRegistrationToken");
+      if (!pendingRegistrationToken) {
+        throw new Error("Verification session expired. Please sign up again.");
+      }
+
+      const response = await fetch("/api/auth/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pendingRegistrationToken }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to resend verification code.");
+      }
+
+      return data as { message?: string; pendingRegistrationToken?: string };
+    },
+    onSuccess: (data) => {
+      if (typeof window !== "undefined" && data?.pendingRegistrationToken) {
+        window.sessionStorage.setItem("pendingRegistrationToken", data.pendingRegistrationToken);
+      }
+
+      toast({
+        title: "New code sent!",
+        description: "Please check your inbox.",
+        duration: 4000,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Unable to resend verification code",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const isSubmitting = verifyEmail.isPending;
 
   const form = useForm<VerifyData>({
@@ -68,6 +113,10 @@ export default function VerifyEmail() {
     setLocation("/signup");
   };
 
+  const handleResendOtp = () => {
+    resendOtpMutation.mutate();
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
@@ -90,14 +139,19 @@ export default function VerifyEmail() {
               {isSubmitting ? "Verifying..." : "Verify"}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
-            <button
+          <div className="mt-4 flex flex-col items-center gap-2 text-center text-sm">
+            <Button
               type="button"
-              onClick={handleGoBackToSignup}
-              className="text-primary hover:underline font-medium"
+              variant="outline"
+              onClick={handleResendOtp}
+              disabled={resendOtpMutation.isPending}
+              className="w-full"
             >
-              Typo in your email? Go back to Sign Up
-            </button>
+              {resendOtpMutation.isPending ? "Sending..." : "Didn't receive a code? Resend verification code"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              If your email address is incorrect, please use <button type="button" onClick={handleGoBackToSignup} className="text-primary hover:underline font-medium">Go back to Sign Up</button> to start over.
+            </p>
           </div>
           <div className="mt-4 text-center text-sm">
             Already verified? <Link href="/login" className="text-primary hover:underline font-medium">Log in</Link>
