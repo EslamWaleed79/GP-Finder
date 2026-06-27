@@ -62,7 +62,10 @@ router.post("/auth/signup", (async (req, res) => {
     cvLink: null,
   });
 
-  await sendVerificationEmail(email, otp);
+  // Fire-and-forget sending the verification email so mail failures don't block signup
+  sendVerificationEmail(email, otp).catch((err) => {
+    console.error("sendVerificationEmail failed:", err);
+  });
 
   const strategy = new SelfViewStrategy();
   const view = strategy.buildView(user, "none");
