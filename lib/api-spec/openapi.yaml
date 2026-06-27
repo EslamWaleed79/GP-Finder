@@ -22,6 +22,8 @@ tags:
     description: In-app notification operations
   - name: admin
     description: Admin operations
+  - name: applications
+    description: Project application operations
   - name: meta
     description: Static metadata (skills, majors)
 
@@ -401,7 +403,145 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
-  # ── Connections ───────────────────────────────────────────────────────
+  /applications:
+    post:
+      operationId: createApplication
+      tags: [applications]
+      summary: Apply to a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectApplicationInput"
+      responses:
+        "201":
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectApplication"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Conflict or duplicate application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /projects/{id}/applications:
+    get:
+      operationId: listProjectApplications
+      tags: [applications]
+      summary: List pending applications for a project
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project applications with applicant details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectApplicationApplicantView"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /applications/mine:
+    get:
+      operationId: listMyApplications
+      tags: [applications]
+      summary: List applications for the current user
+      responses:
+        "200":
+          description: Current user's applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectApplication"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /applications/{id}:
+    patch:
+      operationId: updateApplication
+      tags: [applications]
+      summary: Update an application decision or leave a project
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationDecision"
+      responses:
+        "200":
+          description: Updated application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectApplication"
+        "400":
+          description: Invalid action or state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /connections:
     get:
       operationId: listConnections
@@ -943,6 +1083,77 @@ components:
           enum: [open, in_progress, closed]
         teamSizeCap:
           type: integer
+
+    ProjectApplication:
+      type: object
+      required: [id, applicantId, projectId, status, requestedAt]
+      properties:
+        id:
+          type: integer
+        applicantId:
+          type: integer
+        projectId:
+          type: integer
+        status:
+          type: string
+          enum: [pending, accepted, rejected, left, removed]
+        requestedAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    ProjectApplicationApplicantView:
+      type: object
+      required: [id, applicantId, projectId, status, requestedAt, applicantName, applicantSkills]
+      properties:
+        id:
+          type: integer
+        applicantId:
+          type: integer
+        projectId:
+          type: integer
+        status:
+          type: string
+          enum: [pending, accepted, rejected, left, removed]
+        requestedAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: ["string", "null"]
+          format: date-time
+        applicantName:
+          type: string
+        applicantTrack:
+          type: ["string", "null"]
+        applicantCustomTrack:
+          type: ["string", "null"]
+        applicantSkills:
+          type: array
+          items:
+            type: string
+        applicantBio:
+          type: ["string", "null"]
+        applicantBylaw:
+          type: ["string", "null"]
+        applicantGender:
+          type: ["string", "null"]
+
+    ProjectApplicationInput:
+      type: object
+      required: [projectId]
+      properties:
+        projectId:
+          type: integer
+
+    ApplicationDecision:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [accepted, rejected, removed, left]
 
     # ── Connections ──────────────────────────────────────────────────────
     ConnectRequest:

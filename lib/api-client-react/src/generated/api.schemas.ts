@@ -350,6 +350,78 @@ export interface ProjectUpdate {
   teamSizeCap?: number;
 }
 
+export type ProjectApplicationStatus = typeof ProjectApplicationStatus[keyof typeof ProjectApplicationStatus];
+
+
+export const ProjectApplicationStatus = {
+  pending: 'pending',
+  accepted: 'accepted',
+  rejected: 'rejected',
+  left: 'left',
+  removed: 'removed',
+} as const;
+
+export interface ProjectApplication {
+  id: number;
+  applicantId: number;
+  projectId: number;
+  status: ProjectApplicationStatus;
+  requestedAt: string;
+  /** @nullable */
+  decidedAt?: string | null;
+}
+
+export type ProjectApplicationApplicantViewStatus = typeof ProjectApplicationApplicantViewStatus[keyof typeof ProjectApplicationApplicantViewStatus];
+
+
+export const ProjectApplicationApplicantViewStatus = {
+  pending: 'pending',
+  accepted: 'accepted',
+  rejected: 'rejected',
+  left: 'left',
+  removed: 'removed',
+} as const;
+
+export interface ProjectApplicationApplicantView {
+  id: number;
+  applicantId: number;
+  projectId: number;
+  status: ProjectApplicationApplicantViewStatus;
+  requestedAt: string;
+  /** @nullable */
+  decidedAt?: string | null;
+  applicantName: string;
+  /** @nullable */
+  applicantTrack?: string | null;
+  /** @nullable */
+  applicantCustomTrack?: string | null;
+  applicantSkills: string[];
+  /** @nullable */
+  applicantBio?: string | null;
+  /** @nullable */
+  applicantBylaw?: string | null;
+  /** @nullable */
+  applicantGender?: string | null;
+}
+
+export interface ProjectApplicationInput {
+  projectId: number;
+}
+
+export type ApplicationDecisionAction = typeof ApplicationDecisionAction[keyof typeof ApplicationDecisionAction];
+
+
+export const ApplicationDecisionAction = {
+  accepted: 'accepted',
+  rejected: 'rejected',
+  removed: 'removed',
+  left: 'left',
+} as const;
+
+export interface ApplicationDecision {
+  action: ApplicationDecisionAction;
+}
+
 export type ConnectRequestStatus = typeof ConnectRequestStatus[keyof typeof ConnectRequestStatus];
 
 

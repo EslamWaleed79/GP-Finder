@@ -21,6 +21,7 @@ import type {
 
 import type {
   ApiError,
+  ApplicationDecision,
   AuthResponse,
   ConnectRequest,
   ConnectionInput,
@@ -36,6 +37,9 @@ import type {
   ProfileUpdate,
   ProfileView,
   Project,
+  ProjectApplication,
+  ProjectApplicationApplicantView,
+  ProjectApplicationInput,
   ProjectDetail,
   ProjectInput,
   ProjectUpdate,
@@ -1109,6 +1113,301 @@ export const useDeleteProject = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getDeleteProjectMutationOptions(options));
+    }
+
+export const getCreateApplicationUrl = () => {
+
+
+
+
+  return `/api/applications`
+}
+
+/**
+ * @summary Apply to a project
+ */
+export const createApplication = async (projectApplicationInput: ProjectApplicationInput, options?: RequestInit): Promise<ProjectApplication> => {
+
+  return customFetch<ProjectApplication>(getCreateApplicationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(projectApplicationInput)
+  }
+);}
+
+
+
+
+export const getCreateApplicationMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createApplication>>, TError,{data: BodyType<ProjectApplicationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createApplication>>, TError,{data: BodyType<ProjectApplicationInput>}, TContext> => {
+
+const mutationKey = ['createApplication'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createApplication>>, {data: BodyType<ProjectApplicationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createApplication(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof createApplication>>>
+    export type CreateApplicationMutationBody = BodyType<ProjectApplicationInput>
+    export type CreateApplicationMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Apply to a project
+ */
+export const useCreateApplication = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createApplication>>, TError,{data: BodyType<ProjectApplicationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createApplication>>,
+        TError,
+        {data: BodyType<ProjectApplicationInput>},
+        TContext
+      > => {
+      return useMutation(getCreateApplicationMutationOptions(options));
+    }
+
+export const getListProjectApplicationsUrl = (id: number,) => {
+
+
+
+
+  return `/api/projects/${id}/applications`
+}
+
+/**
+ * @summary List pending applications for a project
+ */
+export const listProjectApplications = async (id: number, options?: RequestInit): Promise<ProjectApplicationApplicantView[]> => {
+
+  return customFetch<ProjectApplicationApplicantView[]>(getListProjectApplicationsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListProjectApplicationsQueryKey = (id: number,) => {
+    return [
+    `/api/projects/${id}/applications`
+    ] as const;
+    }
+
+
+export const getListProjectApplicationsQueryOptions = <TData = Awaited<ReturnType<typeof listProjectApplications>>, TError = ErrorType<ApiError>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProjectApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListProjectApplicationsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listProjectApplications>>> = ({ signal }) => listProjectApplications(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listProjectApplications>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListProjectApplicationsQueryResult = NonNullable<Awaited<ReturnType<typeof listProjectApplications>>>
+export type ListProjectApplicationsQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary List pending applications for a project
+ */
+
+export function useListProjectApplications<TData = Awaited<ReturnType<typeof listProjectApplications>>, TError = ErrorType<ApiError>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listProjectApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListProjectApplicationsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListMyApplicationsUrl = () => {
+
+
+
+
+  return `/api/applications/mine`
+}
+
+/**
+ * @summary List applications for the current user
+ */
+export const listMyApplications = async ( options?: RequestInit): Promise<ProjectApplication[]> => {
+
+  return customFetch<ProjectApplication[]>(getListMyApplicationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyApplicationsQueryKey = () => {
+    return [
+    `/api/applications/mine`
+    ] as const;
+    }
+
+
+export const getListMyApplicationsQueryOptions = <TData = Awaited<ReturnType<typeof listMyApplications>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyApplicationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyApplications>>> = ({ signal }) => listMyApplications({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyApplications>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyApplicationsQueryResult = NonNullable<Awaited<ReturnType<typeof listMyApplications>>>
+export type ListMyApplicationsQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary List applications for the current user
+ */
+
+export function useListMyApplications<TData = Awaited<ReturnType<typeof listMyApplications>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyApplications>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyApplicationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateApplicationUrl = (id: number,) => {
+
+
+
+
+  return `/api/applications/${id}`
+}
+
+/**
+ * @summary Update an application decision or leave a project
+ */
+export const updateApplication = async (id: number,
+    applicationDecision: ApplicationDecision, options?: RequestInit): Promise<ProjectApplication> => {
+
+  return customFetch<ProjectApplication>(getUpdateApplicationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(applicationDecision)
+  }
+);}
+
+
+
+
+export const getUpdateApplicationMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateApplication>>, TError,{id: number;data: BodyType<ApplicationDecision>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateApplication>>, TError,{id: number;data: BodyType<ApplicationDecision>}, TContext> => {
+
+const mutationKey = ['updateApplication'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateApplication>>, {id: number;data: BodyType<ApplicationDecision>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateApplication(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof updateApplication>>>
+    export type UpdateApplicationMutationBody = BodyType<ApplicationDecision>
+    export type UpdateApplicationMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Update an application decision or leave a project
+ */
+export const useUpdateApplication = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateApplication>>, TError,{id: number;data: BodyType<ApplicationDecision>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateApplication>>,
+        TError,
+        {id: number;data: BodyType<ApplicationDecision>},
+        TContext
+      > => {
+      return useMutation(getUpdateApplicationMutationOptions(options));
     }
 
 export const getListConnectionsUrl = () => {

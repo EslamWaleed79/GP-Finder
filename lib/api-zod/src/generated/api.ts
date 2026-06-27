@@ -376,6 +376,83 @@ export const DeleteProjectResponse = zod.object({
 
 
 /**
+ * @summary Apply to a project
+ */
+export const CreateApplicationBody = zod.object({
+  "projectId": zod.number()
+})
+
+export const CreateApplicationResponse = zod.object({
+  "id": zod.number(),
+  "applicantId": zod.number(),
+  "projectId": zod.number(),
+  "status": zod.enum(['pending', 'accepted', 'rejected', 'left', 'removed']),
+  "requestedAt": zod.coerce.date(),
+  "decidedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary List pending applications for a project
+ */
+export const ListProjectApplicationsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListProjectApplicationsResponseItem = zod.object({
+  "id": zod.number(),
+  "applicantId": zod.number(),
+  "projectId": zod.number(),
+  "status": zod.enum(['pending', 'accepted', 'rejected', 'left', 'removed']),
+  "requestedAt": zod.coerce.date(),
+  "decidedAt": zod.coerce.date().nullish(),
+  "applicantName": zod.string(),
+  "applicantTrack": zod.string().nullish(),
+  "applicantCustomTrack": zod.string().nullish(),
+  "applicantSkills": zod.array(zod.string()),
+  "applicantBio": zod.string().nullish(),
+  "applicantBylaw": zod.string().nullish(),
+  "applicantGender": zod.string().nullish()
+})
+export const ListProjectApplicationsResponse = zod.array(ListProjectApplicationsResponseItem)
+
+
+/**
+ * @summary List applications for the current user
+ */
+export const ListMyApplicationsResponseItem = zod.object({
+  "id": zod.number(),
+  "applicantId": zod.number(),
+  "projectId": zod.number(),
+  "status": zod.enum(['pending', 'accepted', 'rejected', 'left', 'removed']),
+  "requestedAt": zod.coerce.date(),
+  "decidedAt": zod.coerce.date().nullish()
+})
+export const ListMyApplicationsResponse = zod.array(ListMyApplicationsResponseItem)
+
+
+/**
+ * @summary Update an application decision or leave a project
+ */
+export const UpdateApplicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateApplicationBody = zod.object({
+  "action": zod.enum(['accepted', 'rejected', 'removed', 'left'])
+})
+
+export const UpdateApplicationResponse = zod.object({
+  "id": zod.number(),
+  "applicantId": zod.number(),
+  "projectId": zod.number(),
+  "status": zod.enum(['pending', 'accepted', 'rejected', 'left', 'removed']),
+  "requestedAt": zod.coerce.date(),
+  "decidedAt": zod.coerce.date().nullish()
+})
+
+
+/**
  * @summary List all connect requests for the current user (incoming and outgoing)
  */
 export const ListConnectionsResponse = zod.object({

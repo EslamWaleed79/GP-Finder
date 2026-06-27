@@ -1,14 +1,17 @@
 import {
   useGetProject,
   useDeleteProject,
-  useSendConnection,
+  useCreateApplication,
+  useListProjectApplications,
+  useUpdateApplication,
   useUpdateProject,
   getGetProjectQueryKey,
+  getListProjectApplicationsQueryKey,
   getListProjectsQueryKey,
   useGetMe,
 } from "@workspace/api-client-react";
 import { useParams, useLocation, Link } from "wouter";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +56,7 @@ export default function ProjectDetail() {
     mutation: { onSuccess: () => setLocation("/dashboard") },
   });
 
-  const applyToProject = useSendConnection({
+  const applyToProject = useCreateApplication({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
@@ -81,43 +84,24 @@ export default function ProjectDetail() {
   const {
     data: applications = [],
     isLoading: loadingApplications,
-  } = useQuery<ProjectApplicationWithApplicant[]>({
-    queryKey: ["projectApplications", id],
-    queryFn: async () => {
-      const response = await fetch(`/api/projects/${id}/applications`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Failed to load applications");
-      }
-      return response.json();
+  } = useListProjectApplications(id, {
+    query: {
+      queryKey: getListProjectApplicationsQueryKey(id),
+      enabled: isLeader && !!id,
+      retry: false,
     },
-    enabled: isLeader && !!id,
-    retry: false,
   });
 
-  const decideApplication = useMutation({
-    mutationFn: async ({ applicationId, action }: { applicationId: number; action: "accepted" | "rejected" | "removed" }) => {
-      const response = await fetch(`/api/applications/${applicationId}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Failed to update application");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
-      queryClient.invalidateQueries({ queryKey: ["projectApplications", id] });
-      toast({ title: "Application updated" });
-    },
-    onError: (err: any) => {
-      toast({ title: "Unable to update application", description: err?.message || "Please try again", variant: "destructive" });
+  const decideApplication = useUpdateApplication({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
+        queryClient.invalidateQueries({ queryKey: getListProjectApplicationsQueryKey(id) });
+        toast({ title: "Application updated" });
+      },
+      onError: (err: any) => {
+        toast({ title: "Unable to update application", description: err?.message || "Please try again", variant: "destructive" });
+      },
     },
   });
 
@@ -182,10 +166,10 @@ export default function ProjectDetail() {
             </>
           ) : (
             <>
-              {(project.canApply || project.connectStatus !== "none") && (
+              {project.canApply && !project.isMember && (
                 <Button
-                  onClick={() => applyToProject.mutate({ data: { recipientId: project.leaderId ?? project.ownerId, projectId: project.id } })}
-                  disabled={applyToProject.isPending || project.connectStatus !== "none"}
+                  onClick={() => applyToProject.mutate({ data: { projectId: project.id } })}
+                  disabled={applyToProject.isPending}
                 >
                   {project.connectStatus === "pending_sent"
                     ? "Pending"
@@ -241,7 +225,7 @@ export default function ProjectDetail() {
                     <ApplicationRow
                       key={app.id}
                       app={app}
-                      onDecide={(action) => decideApplication.mutate({ applicationId: app.id, action })}
+                      onDecide={(action) => decideApplication.mutate({ id: app.id, data: { action } })}
                       isPending={decideApplication.isPending}
                     />
                   ))}
