@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useLocation, Link } from "wouter";
+import { useLocation, Link, Redirect } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { useVerifyEmail, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useVerifyEmail, useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,14 +22,20 @@ export default function VerifyEmail() {
   const [_, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: me } = useGetMe();
+  
+  // Redirect to dashboard if user is already verified
+  if (me?.isVerified === true) {
+    return <Redirect to="/dashboard" />;
+  }
   const verifyEmail = useVerifyEmail({
     mutation: {
-      onSuccess: async () => {
+      onSuccess: () => {
         toast({ title: "Email verified successfully", duration: 2000 });
         if (typeof window !== "undefined") {
           window.localStorage.removeItem("pendingVerificationEmail");
         }
-        await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
         setLocation("/dashboard");
       },
       onError: (error: any) => {

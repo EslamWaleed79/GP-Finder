@@ -32,11 +32,22 @@ export default function Login() {
         setLocation("/dashboard");
       },
       onError: (err: any) => {
-        toast({
-          title: "Login Failed",
-          description: err.message || "Invalid credentials",
-          variant: "destructive",
-        });
+        // Check if error is due to unverified email (403 or message contains "verify")
+        const isUnverifiedError = err?.status === 403 || (err?.message && err.message.toLowerCase().includes("verify"));
+        
+        if (isUnverifiedError) {
+          // Save email to localStorage and redirect to verify-email page
+          const email = form.getValues("email");
+          localStorage.setItem("pendingVerificationEmail", email);
+          setLocation("/verify-email");
+        } else {
+          // Display standard error toast for other errors
+          toast({
+            title: "Login Failed",
+            description: err.message || "Invalid credentials",
+            variant: "destructive",
+          });
+        }
       }
     }
   });

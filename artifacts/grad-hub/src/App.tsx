@@ -57,13 +57,7 @@ function ProtectedRoute({
 
   if (!me) return <Redirect to="/login" />;
 
-  if (me.isVerified && location === "/verify-email") {
-    return <Redirect to="/dashboard" />;
-  }
-
-  if (!me.isVerified && location !== "/verify-email") {
-    return <Redirect to="/verify-email" />;
-  }
+  if (!me.isVerified) return <Redirect to="/verify-email" />;
 
   if (adminOnly && me.role !== "admin") return <Redirect to="/dashboard" />;
 
@@ -83,7 +77,7 @@ function RootRedirect() {
       </div>
     );
   }
-  return <Redirect to={me ? "/dashboard" : "/login"} />;
+  return <Redirect to={me ? (me.isVerified ? "/dashboard" : "/verify-email") : "/login"} />;
 }
 
 function Router() {
