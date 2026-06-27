@@ -58,6 +58,7 @@ export default function Dashboard() {
   const [bylawFilter, setBylawFilter] = useState("All");
   const [genderFilter, setGenderFilter] = useState("All");
   const [projectTrackFilter, setProjectTrackFilter] = useState("All");
+  const [hasAppliedLocally, setHasAppliedLocally] = useState(false);
 
   const { data: projects = [], isLoading: loadingProjects } = useListProjects({
     search: search || undefined,
@@ -77,6 +78,7 @@ export default function Dashboard() {
   const applyToProject = useSendConnection({
     mutation: {
       onSuccess: () => {
+        setHasAppliedLocally(true);
         queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
         toast({ title: "Application submitted!" });
       },
@@ -210,18 +212,22 @@ export default function Dashboard() {
                       <Button variant="outline" className="flex-1 text-xs" asChild>
                         <Link href={`/projects/${project.id}`}>View Details</Link>
                       </Button>
-                      {project.canApply && (
-                        <Button
-                          size="sm"
-                          className="text-xs"
-                          disabled={applyToProject.isPending}
-                          onClick={() =>
-                            applyToProject.mutate({ data: { recipientId: project.leaderId ?? project.ownerId, projectId: project.id } })
-                          }
-                        >
-                          {applyToProject.isPending ? "Applying..." : "Apply"}
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        className="text-xs"
+                        disabled={applyToProject.isPending || !project.canApply || project.isMember || hasAppliedLocally}
+                        onClick={() =>
+                          applyToProject.mutate({ data: { recipientId: project.leaderId ?? project.ownerId, projectId: project.id } })
+                        }
+                      >
+                        {hasAppliedLocally
+                          ? project.isMember
+                            ? "Applied"
+                            : "Pending"
+                          : applyToProject.isPending
+                          ? "Applying..."
+                          : "Apply"}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
