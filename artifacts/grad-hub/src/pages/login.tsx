@@ -17,8 +17,6 @@ const loginSchema = z.object({
 });
 
 export default function Login() {
-  const [_, setLocation] = useLocation();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   
   const login = useLogin({
@@ -28,8 +26,8 @@ export default function Login() {
           localStorage.setItem("token", data.token);
         }
 
-        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-        setLocation("/dashboard");
+        // Hard redirect forces React unmount and fresh /api/auth/me fetch
+        window.location.href = "/dashboard";
       },
       onError: (err: any) => {
         // Check if error is due to unverified email (403 or message contains "verify")

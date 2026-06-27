@@ -235,7 +235,13 @@ router.get("/auth/me", (async (req, res) => {
   }
 
   try {
-    const user = await userRepo.findById(userId);
+    // Perform a fresh database lookup to ensure absolute latest isVerified status
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+
     if (!user) {
       return res.status(401).json({ error: "User not found" });
     }
