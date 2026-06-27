@@ -83,9 +83,21 @@ router.post("/auth/verify-email", (async (req, res) => {
     return res.status(400).json({ error: "Email and code are required" });
   }
 
-  const user = await userRepo.findByEmail(email.toLowerCase().trim());
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await userRepo.findByEmail(normalizedEmail);
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  console.log("verify-email lookup user:", {
+    id: user.id,
+    email: user.email,
+    isVerified: user.isVerified,
+    verificationCode: user.verificationCode,
+    verificationExpires: user.verificationExpires,
+  });
+
   if (
-    !user ||
     user.isVerified ||
     user.verificationCode !== code ||
     !user.verificationExpires ||
