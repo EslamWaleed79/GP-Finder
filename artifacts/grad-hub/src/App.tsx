@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -45,6 +45,7 @@ function ProtectedRoute({
   skipOnboardingCheck?: boolean;
 }) {
   const { data: me, isLoading } = useGetMe();
+  const [location] = useLocation();
 
   if (isLoading) {
     return (
@@ -55,6 +56,10 @@ function ProtectedRoute({
   }
 
   if (!me) return <Redirect to="/login" />;
+
+  if (!me.isVerified && location !== "/verify-email") {
+    return <Redirect to="/verify-email" />;
+  }
 
   if (adminOnly && me.role !== "admin") return <Redirect to="/dashboard" />;
 

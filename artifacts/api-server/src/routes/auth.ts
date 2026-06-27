@@ -191,6 +191,10 @@ router.post("/auth/login", (async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    if (!user.isVerified) {
+      return res.status(403).json({ error: "Please verify your email address before logging in." });
+    }
+
     const strategy = new SelfViewStrategy();
     const view = strategy.buildView(user, "none");
     const token = signJwt({ userId: user.id, email: user.email, role: user.role });
