@@ -1,13 +1,9 @@
 import {
   useGetProject,
   useDeleteProject,
-  useApplyToProject,
-  useListProjectApplications,
-  useDecideApplication,
-  useLeaveProject,
-  useUpdateProjectStatus,
+  useSendConnection,
+  useUpdateProject,
   getGetProjectQueryKey,
-  getListProjectApplicationsQueryKey,
   getListProjectsQueryKey,
   useGetMe,
 } from "@workspace/api-client-react";
@@ -18,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import type { ProjectApplicationWithApplicant } from "@workspace/api-client-react";
 
 function trackBadgeText(track: string | null): string {
   if (!track) return "";
@@ -40,15 +35,11 @@ export default function ProjectDetail() {
   const isLeader = me?.id === project?.leaderId;
   const isMember = Boolean(project?.isMember);
 
-  const { data: applications = [] } = useListProjectApplications(id, {
-    query: { enabled: !!id && isLeader },
-  });
-
   const deleteProject = useDeleteProject({
     mutation: { onSuccess: () => setLocation("/dashboard") },
   });
 
-  const applyToProject = useApplyToProject({
+  const applyToProject = useSendConnection({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
@@ -60,32 +51,7 @@ export default function ProjectDetail() {
     },
   });
 
-  const decideApplication = useDecideApplication({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
-        queryClient.invalidateQueries({ queryKey: getListProjectApplicationsQueryKey(id) });
-      },
-      onError: (err: any) => {
-        toast({ title: "Error", description: err?.message, variant: "destructive" });
-      },
-    },
-  });
-
-  const leaveProject = useLeaveProject({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
-        queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
-        toast({ title: "You left the project" });
-      },
-      onError: (err: any) => {
-        toast({ title: "Error", description: err?.message, variant: "destructive" });
-      },
-    },
-  });
-
-  const updateProjectStatus = useUpdateProjectStatus({
+  const updateProjectStatus = useUpdateProject({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
@@ -158,18 +124,9 @@ export default function ProjectDetail() {
             </>
           ) : (
             <>
-              {isMember && !isLeader && (
-                <Button
-                  variant="destructive"
-                  onClick={() => leaveProject.mutate({ id })}
-                  disabled={leaveProject.isPending}
-                >
-                  {leaveProject.isPending ? "Leaving..." : "Leave Project"}
-                </Button>
-              )}
               {project.canApply && (
                 <Button
-                  onClick={() => applyToProject.mutate({ data: { projectId: project.id } })}
+                  onClick={() => applyToProject.mutate({ data: { recipientId: project.leaderId, projectId: project.id } })}
                   disabled={applyToProject.isPending}
                 >
                   {applyToProject.isPending ? "Applying..." : "Apply to Join"}
@@ -203,30 +160,7 @@ export default function ProjectDetail() {
         </CardContent>
       </Card>
 
-      {/* ── Applications Panel (leader only) ──────────────────── */}
-      {isLeader && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Applications ({applications.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {applications.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No applications yet.</p>
-            ) : (
-              applications.map((app) => (
-                <ApplicationRow
-                  key={app.id}
-                  app={app}
-                  onDecide={(action) =>
-                    decideApplication.mutate({ id: app.id, data: { action } })
-                  }
-                  isPending={decideApplication.isPending}
-                />
-              ))
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Leader-only application management is not currently available in the generated client. */}
     </div>
   );
 }

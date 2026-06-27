@@ -2,7 +2,7 @@ import {
   useListProjects,
   useListUsers,
   useGetMe,
-  useApplyToProject,
+  useSendConnection,
   getListProjectsQueryKey,
   getListUsersQueryKey,
 } from "@workspace/api-client-react";
@@ -68,7 +68,7 @@ export default function Dashboard() {
     gender: genderFilter !== "All" ? genderFilter : undefined,
   });
 
-  const applyToProject = useApplyToProject({
+  const applyToProject = useSendConnection({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
@@ -187,7 +187,7 @@ export default function Dashboard() {
                           className="text-xs"
                           disabled={applyToProject.isPending}
                           onClick={() =>
-                            applyToProject.mutate({ data: { projectId: project.id } })
+                            applyToProject.mutate({ data: { recipientId: project.leaderId, projectId: project.id } })
                           }
                         >
                           Apply

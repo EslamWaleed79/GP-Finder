@@ -1,4 +1,4 @@
-import { useListConnections, useRespondToConnection, getListConnectionsQueryKey } from "@workspace/api-client-react";
+import { useListConnections, useRespondConnection, getListConnectionsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { Check, X } from "lucide-react";
 export default function Connections() {
   const { data, isLoading } = useListConnections();
   const queryClient = useQueryClient();
-  const respond = useRespondToConnection();
+  const respond = useRespondConnection();
 
   const handleRespond = (id: number, status: "accepted" | "declined") => {
     respond.mutate({ id, data: { status } }, {
