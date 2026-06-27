@@ -42,14 +42,17 @@ router.post("/connections", (async (req, res) => {
     return res.status(409).json({ error: result.error });
   }
 
-  const sender = await userRepo.findById(req.session.userId);
-  if (sender) {
-    await notificationService.notifyConnectionRequest(recipientId, sender.id, sender.name);
+  if (result.created) {
+    const sender = await userRepo.findById(req.session.userId);
+    if (sender) {
+      await notificationService.notifyConnectionRequest(recipientId, sender.id, sender.name);
+    }
   }
 
   const rows = await connectionManager.listForUser(req.session.userId);
   const sent = rows.outgoing.find((r) => r.id === result.request!.id);
-  return res.status(201).json(sent ?? result.request);
+  const statusCode = result.created ? 201 : 200;
+  return res.status(statusCode).json(sent ?? result.request);
 }) as RequestHandler);
 
 router.patch("/connections/:id", (async (req, res) => {

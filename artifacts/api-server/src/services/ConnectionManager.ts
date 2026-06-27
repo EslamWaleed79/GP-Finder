@@ -22,7 +22,12 @@ export class ConnectionManager {
     senderId: number,
     recipientId: number,
     projectId?: number | null
-  ): Promise<{ ok: boolean; error?: string; request?: ConnectRequest }> {
+  ): Promise<{
+    ok: boolean;
+    error?: string;
+    request?: ConnectRequest;
+    created?: boolean;
+  }> {
     if (senderId === recipientId) {
       return { ok: false, error: "Cannot connect with yourself" };
     }
@@ -51,10 +56,7 @@ export class ConnectionManager {
       .limit(1);
 
     if (existing.length > 0) {
-      return {
-        ok: false,
-        error: "A pending or accepted connection already exists",
-      };
+      return { ok: true, request: existing[0], created: false };
     }
 
     const [request] = await db
@@ -62,7 +64,7 @@ export class ConnectionManager {
       .values({ senderId, recipientId, projectId: projectId ?? null })
       .returning();
 
-    return { ok: true, request: request! };
+    return { ok: true, request: request!, created: true };
   }
 
   async respond(
