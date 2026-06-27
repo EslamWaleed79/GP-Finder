@@ -15,6 +15,16 @@ export interface Project {
   status: ProjectStatus;
   ownerId: number;
   ownerName: string;
+  leaderId?: number;
+  /** @nullable */
+  leaderName?: string | null;
   teamSizeCap: number;
+  maxMembers: number;
+  memberCount?: number;
+  /** @nullable */
+  track?: string | null;
+  canApply?: boolean;
+  isLeader?: boolean;
+  isMember?: boolean;
   createdAt: Date;
 }

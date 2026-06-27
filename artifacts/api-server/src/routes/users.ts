@@ -18,18 +18,26 @@ const connectionManager = new ConnectionManager();
 const visibilityResolver = new ContactVisibilityResolver();
 
 router.get("/users", (async (req, res) => {
-  const { skills, major, search, track, bylaw, gender } = req.query as {
+  const { skills, major, search, track, bylaw, gender, connectionStatus } = req.query as {
     skills?: string;
     major?: string;
     search?: string;
     track?: string;
     bylaw?: string;
     gender?: string;
+    connectionStatus?: string;
   };
 
   const skillsArr = skills
     ? skills.split(",").map((s) => s.trim()).filter(Boolean)
     : undefined;
+
+  const viewerId: number | undefined = req.session.userId;
+  const requestedStatus = connectionStatus && connectionStatus !== "all" ? connectionStatus : undefined;
+
+  if (requestedStatus && !viewerId) {
+    return res.status(401).json({ error: "Authentication required for connectionStatus filter" });
+  }
 
   const users = await userRepo.list({
     skills: skillsArr,
@@ -40,19 +48,27 @@ router.get("/users", (async (req, res) => {
     gender: gender && gender !== "All" ? gender : undefined,
   });
 
-  const viewerId: number | undefined = req.session.userId;
-
   const views = await Promise.all(
     users.map(async (u) => {
       const connectStatus = viewerId
         ? await userRepo.getConnectionStatus(viewerId, u.id)
         : ("none" as const);
-      const strategy = new PublicViewStrategy();
-      return strategy.buildView(u, connectStatus);
+      return { user: u, connectStatus };
     })
   );
 
-  return res.json(views);
+  const filtered = requestedStatus
+    ? views.filter((item) => item.connectStatus === requestedStatus)
+    : views;
+
+  const output = await Promise.all(
+    filtered.map(async ({ user, connectStatus }) => {
+      const strategy = new PublicViewStrategy();
+      return strategy.buildView(user, connectStatus);
+    })
+  );
+
+  return res.json(output);
 }) as RequestHandler);
 
 router.get("/users/:id", (async (req, res) => {

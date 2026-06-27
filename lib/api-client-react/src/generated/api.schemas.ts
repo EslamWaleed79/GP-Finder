@@ -36,6 +36,28 @@ export interface LoginInput {
   password: string;
 }
 
+/**
+ * @nullable
+ */
+export type ProfileViewBylaw = typeof ProfileViewBylaw[keyof typeof ProfileViewBylaw] | null;
+
+
+export const ProfileViewBylaw = {
+  NUMBER_2018: '2018',
+  NUMBER_2023: '2023',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ProfileViewGender = typeof ProfileViewGender[keyof typeof ProfileViewGender] | null;
+
+
+export const ProfileViewGender = {
+  Male: 'Male',
+  Female: 'Female',
+} as const;
+
 export type ProfileViewRole = typeof ProfileViewRole[keyof typeof ProfileViewRole];
 
 
@@ -69,6 +91,16 @@ export interface ProfileView {
   bio?: string | null;
   /** @nullable */
   cvLink?: string | null;
+  /** @nullable */
+  track?: string | null;
+  /** @nullable */
+  customTrack?: string | null;
+  /** @nullable */
+  bylaw?: ProfileViewBylaw;
+  /** @nullable */
+  gender?: ProfileViewGender;
+  /** @nullable */
+  gpa?: number | null;
   role: ProfileViewRole;
   createdAt: string;
   /** Connect status relative to the authenticated viewer */
@@ -79,6 +111,28 @@ export interface AuthResponse {
   token: string;
   user: ProfileView;
 }
+
+/**
+ * @nullable
+ */
+export type UserDetailViewBylaw = typeof UserDetailViewBylaw[keyof typeof UserDetailViewBylaw] | null;
+
+
+export const UserDetailViewBylaw = {
+  NUMBER_2018: '2018',
+  NUMBER_2023: '2023',
+} as const;
+
+/**
+ * @nullable
+ */
+export type UserDetailViewGender = typeof UserDetailViewGender[keyof typeof UserDetailViewGender] | null;
+
+
+export const UserDetailViewGender = {
+  Male: 'Male',
+  Female: 'Female',
+} as const;
 
 export type UserDetailViewRole = typeof UserDetailViewRole[keyof typeof UserDetailViewRole];
 
@@ -110,6 +164,16 @@ export interface UserDetailView {
   bio?: string | null;
   /** @nullable */
   cvLink?: string | null;
+  /** @nullable */
+  track?: string | null;
+  /** @nullable */
+  customTrack?: string | null;
+  /** @nullable */
+  bylaw?: UserDetailViewBylaw;
+  /** @nullable */
+  gender?: UserDetailViewGender;
+  /** @nullable */
+  gpa?: number | null;
   role: UserDetailViewRole;
   createdAt: string;
   connectStatus: UserDetailViewConnectStatus;
@@ -125,6 +189,28 @@ export interface UserDetailView {
   phone?: string | null;
 }
 
+/**
+ * @nullable
+ */
+export type ProfileUpdateBylaw = typeof ProfileUpdateBylaw[keyof typeof ProfileUpdateBylaw] | null;
+
+
+export const ProfileUpdateBylaw = {
+  NUMBER_2018: '2018',
+  NUMBER_2023: '2023',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ProfileUpdateGender = typeof ProfileUpdateGender[keyof typeof ProfileUpdateGender] | null;
+
+
+export const ProfileUpdateGender = {
+  Male: 'Male',
+  Female: 'Female',
+} as const;
+
 export interface ProfileUpdate {
   name?: string;
   major?: string;
@@ -135,6 +221,16 @@ export interface ProfileUpdate {
   phone?: string | null;
   /** @nullable */
   cvLink?: string | null;
+  /** @nullable */
+  track?: string | null;
+  /** @nullable */
+  customTrack?: string | null;
+  /** @nullable */
+  bylaw?: ProfileUpdateBylaw;
+  /** @nullable */
+  gender?: ProfileUpdateGender;
+  /** @nullable */
+  gpa?: number | null;
 }
 
 export type ProjectStatus = typeof ProjectStatus[keyof typeof ProjectStatus];
@@ -154,7 +250,17 @@ export interface Project {
   status: ProjectStatus;
   ownerId: number;
   ownerName: string;
+  leaderId?: number;
+  /** @nullable */
+  leaderName?: string | null;
   teamSizeCap: number;
+  maxMembers: number;
+  memberCount?: number;
+  /** @nullable */
+  track?: string | null;
+  canApply?: boolean;
+  isLeader?: boolean;
+  isMember?: boolean;
   createdAt: string;
 }
 
@@ -188,7 +294,17 @@ export interface ProjectDetail {
   status: ProjectDetailStatus;
   ownerId: number;
   ownerName: string;
+  leaderId?: number;
+  /** @nullable */
+  leaderName?: string | null;
   teamSizeCap: number;
+  maxMembers: number;
+  memberCount?: number;
+  /** @nullable */
+  track?: string | null;
+  canApply?: boolean;
+  isLeader?: boolean;
+  isMember?: boolean;
   createdAt: string;
   /** Viewer's connect status with the project owner */
   connectStatus: ProjectDetailConnectStatus;
@@ -314,7 +430,25 @@ major?: string;
  * Free-text search across name and bio
  */
 search?: string;
+/**
+ * Filter users by track
+ */
+track?: string;
+/**
+ * Filter users by connection status relative to the authenticated viewer
+ */
+connectionStatus?: ListUsersConnectionStatus;
 };
+
+export type ListUsersConnectionStatus = typeof ListUsersConnectionStatus[keyof typeof ListUsersConnectionStatus];
+
+
+export const ListUsersConnectionStatus = {
+  pending_sent: 'pending_sent',
+  pending_received: 'pending_received',
+  connected: 'connected',
+  all: 'all',
+} as const;
 
 export type ListProjectsParams = {
 /**
@@ -329,6 +463,10 @@ status?: ListProjectsStatus;
  * Free-text search across title and description
  */
 search?: string;
+/**
+ * Filter projects by track
+ */
+track?: string;
 };
 
 export type ListProjectsStatus = typeof ListProjectsStatus[keyof typeof ListProjectsStatus];

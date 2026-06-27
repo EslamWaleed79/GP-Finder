@@ -15,7 +15,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
-function trackBadgeText(track: string | null): string {
+interface ProjectApplicationWithApplicant {
+  id: number;
+  applicantId: number;
+  applicantName: string;
+  applicantTrack?: string | null;
+  applicantCustomTrack?: string | null;
+  applicantBylaw?: string | null;
+  applicantGender?: string | null;
+  applicantBio?: string | null;
+  applicantSkills: string[];
+  requestedAt: string;
+  status: string;
+}
+
+function trackBadgeText(track: string | null | undefined): string {
   if (!track) return "";
   return track;
 }
@@ -126,7 +140,7 @@ export default function ProjectDetail() {
             <>
               {project.canApply && (
                 <Button
-                  onClick={() => applyToProject.mutate({ data: { recipientId: project.leaderId, projectId: project.id } })}
+                  onClick={() => applyToProject.mutate({ data: { recipientId: project.leaderId ?? project.ownerId, projectId: project.id } })}
                   disabled={applyToProject.isPending}
                 >
                   {applyToProject.isPending ? "Applying..." : "Apply to Join"}
@@ -210,7 +224,7 @@ function ApplicationRow({
           <p className="text-xs text-muted-foreground line-clamp-2">{app.applicantBio}</p>
         )}
         <div className="flex flex-wrap gap-1">
-          {app.applicantSkills.slice(0, 4).map((s) => (
+          {app.applicantSkills.slice(0, 4).map((s: string) => (
             <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>
           ))}
           {app.applicantSkills.length > 4 && (

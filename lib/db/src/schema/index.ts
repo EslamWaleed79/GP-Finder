@@ -55,7 +55,7 @@ export const usersTable = pgTable("users", {
     .array()
     .notNull()
     .$default(() => []),
-  bio: text("bio"),
+  bio: text("bio").notNull(),
   phone: text("phone"),
   universityId: text("university_id").notNull(),
   gpa: real("gpa"),

@@ -46,6 +46,11 @@ export const SignupResponse = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "track": zod.string().nullish(),
+  "customTrack": zod.string().nullish(),
+  "bylaw": zod.enum(['2018', '2023']).nullish(),
+  "gender": zod.enum(['Male', 'Female']).nullish(),
+  "gpa": zod.number().nullish(),
   "role": zod.enum(['student', 'admin']),
   "createdAt": zod.coerce.date(),
   "connectStatus": zod.enum(['none', 'pending_sent', 'pending_received', 'connected']).describe('Connect status relative to the authenticated viewer')
@@ -70,6 +75,11 @@ export const LoginResponse = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "track": zod.string().nullish(),
+  "customTrack": zod.string().nullish(),
+  "bylaw": zod.enum(['2018', '2023']).nullish(),
+  "gender": zod.enum(['Male', 'Female']).nullish(),
+  "gpa": zod.number().nullish(),
   "role": zod.enum(['student', 'admin']),
   "createdAt": zod.coerce.date(),
   "connectStatus": zod.enum(['none', 'pending_sent', 'pending_received', 'connected']).describe('Connect status relative to the authenticated viewer')
@@ -108,6 +118,11 @@ export const GetMeResponse = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "track": zod.string().nullish(),
+  "customTrack": zod.string().nullish(),
+  "bylaw": zod.enum(['2018', '2023']).nullish(),
+  "gender": zod.enum(['Male', 'Female']).nullish(),
+  "gpa": zod.number().nullish(),
   "role": zod.enum(['student', 'admin']),
   "createdAt": zod.coerce.date(),
   "connectStatus": zod.enum(['none', 'pending_sent', 'pending_received', 'connected']).describe('Connect status relative to the authenticated viewer')
@@ -120,7 +135,9 @@ export const GetMeResponse = zod.object({
 export const ListUsersQueryParams = zod.object({
   "skills": zod.coerce.string().optional().describe('Comma-separated skill tags to filter by'),
   "major": zod.coerce.string().optional().describe('Major to filter by'),
-  "search": zod.coerce.string().optional().describe('Free-text search across name and bio')
+  "search": zod.coerce.string().optional().describe('Free-text search across name and bio'),
+  "track": zod.coerce.string().optional().describe('Filter users by track'),
+  "connectionStatus": zod.enum(['pending_sent', 'pending_received', 'connected', 'all']).optional().describe('Filter users by connection status relative to the authenticated viewer')
 })
 
 export const ListUsersResponseItem = zod.object({
@@ -130,6 +147,11 @@ export const ListUsersResponseItem = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "track": zod.string().nullish(),
+  "customTrack": zod.string().nullish(),
+  "bylaw": zod.enum(['2018', '2023']).nullish(),
+  "gender": zod.enum(['Male', 'Female']).nullish(),
+  "gpa": zod.number().nullish(),
   "role": zod.enum(['student', 'admin']),
   "createdAt": zod.coerce.date(),
   "connectStatus": zod.enum(['none', 'pending_sent', 'pending_received', 'connected']).describe('Connect status relative to the authenticated viewer')
@@ -151,6 +173,11 @@ export const GetUserResponse = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "track": zod.string().nullish(),
+  "customTrack": zod.string().nullish(),
+  "bylaw": zod.enum(['2018', '2023']).nullish(),
+  "gender": zod.enum(['Male', 'Female']).nullish(),
+  "gpa": zod.number().nullish(),
   "role": zod.enum(['student', 'admin']),
   "createdAt": zod.coerce.date(),
   "connectStatus": zod.enum(['none', 'pending_sent', 'pending_received', 'connected']),
@@ -172,7 +199,12 @@ export const UpdateProfileBody = zod.object({
   "skills": zod.array(zod.string()).optional(),
   "bio": zod.string().nullish(),
   "phone": zod.string().nullish(),
-  "cvLink": zod.string().url().nullish()
+  "cvLink": zod.string().url().nullish(),
+  "track": zod.string().nullish(),
+  "customTrack": zod.string().nullish(),
+  "bylaw": zod.enum(['2018', '2023']).nullish(),
+  "gender": zod.enum(['Male', 'Female']).nullish(),
+  "gpa": zod.number().nullish()
 })
 
 export const UpdateProfileResponse = zod.object({
@@ -182,6 +214,11 @@ export const UpdateProfileResponse = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "track": zod.string().nullish(),
+  "customTrack": zod.string().nullish(),
+  "bylaw": zod.enum(['2018', '2023']).nullish(),
+  "gender": zod.enum(['Male', 'Female']).nullish(),
+  "gpa": zod.number().nullish(),
   "role": zod.enum(['student', 'admin']),
   "createdAt": zod.coerce.date(),
   "connectStatus": zod.enum(['none', 'pending_sent', 'pending_received', 'connected']).describe('Connect status relative to the authenticated viewer')
@@ -194,7 +231,8 @@ export const UpdateProfileResponse = zod.object({
 export const ListProjectsQueryParams = zod.object({
   "skills": zod.coerce.string().optional().describe('Comma-separated required-skill tags to filter by'),
   "status": zod.enum(['open', 'in_progress', 'closed']).optional().describe('Filter by project status'),
-  "search": zod.coerce.string().optional().describe('Free-text search across title and description')
+  "search": zod.coerce.string().optional().describe('Free-text search across title and description'),
+  "track": zod.coerce.string().optional().describe('Filter projects by track')
 })
 
 export const ListProjectsResponseItem = zod.object({
@@ -205,7 +243,15 @@ export const ListProjectsResponseItem = zod.object({
   "status": zod.enum(['open', 'in_progress', 'closed']),
   "ownerId": zod.number(),
   "ownerName": zod.string(),
+  "leaderId": zod.number().optional(),
+  "leaderName": zod.string().nullish(),
   "teamSizeCap": zod.number(),
+  "maxMembers": zod.number(),
+  "memberCount": zod.number().optional(),
+  "track": zod.string().nullish(),
+  "canApply": zod.boolean().optional(),
+  "isLeader": zod.boolean().optional(),
+  "isMember": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem)
@@ -239,7 +285,15 @@ export const CreateProjectResponse = zod.object({
   "status": zod.enum(['open', 'in_progress', 'closed']),
   "ownerId": zod.number(),
   "ownerName": zod.string(),
+  "leaderId": zod.number().optional(),
+  "leaderName": zod.string().nullish(),
   "teamSizeCap": zod.number(),
+  "maxMembers": zod.number(),
+  "memberCount": zod.number().optional(),
+  "track": zod.string().nullish(),
+  "canApply": zod.boolean().optional(),
+  "isLeader": zod.boolean().optional(),
+  "isMember": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
 
@@ -259,7 +313,15 @@ export const GetProjectResponse = zod.object({
   "status": zod.enum(['open', 'in_progress', 'closed']),
   "ownerId": zod.number(),
   "ownerName": zod.string(),
+  "leaderId": zod.number().optional(),
+  "leaderName": zod.string().nullish(),
   "teamSizeCap": zod.number(),
+  "maxMembers": zod.number(),
+  "memberCount": zod.number().optional(),
+  "track": zod.string().nullish(),
+  "canApply": zod.boolean().optional(),
+  "isLeader": zod.boolean().optional(),
+  "isMember": zod.boolean().optional(),
   "createdAt": zod.coerce.date(),
   "connectStatus": zod.enum(['none', 'pending_sent', 'pending_received', 'connected']).describe('Viewer\'s connect status with the project owner')
 })
@@ -288,7 +350,15 @@ export const UpdateProjectResponse = zod.object({
   "status": zod.enum(['open', 'in_progress', 'closed']),
   "ownerId": zod.number(),
   "ownerName": zod.string(),
+  "leaderId": zod.number().optional(),
+  "leaderName": zod.string().nullish(),
   "teamSizeCap": zod.number(),
+  "maxMembers": zod.number(),
+  "memberCount": zod.number().optional(),
+  "track": zod.string().nullish(),
+  "canApply": zod.boolean().optional(),
+  "isLeader": zod.boolean().optional(),
+  "isMember": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
 
@@ -430,10 +500,17 @@ export const AdminListUsersResponseItem = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "track": zod.string().nullish(),
+  "customTrack": zod.string().nullish(),
+  "bylaw": zod.enum(['2018', '2023']).nullish(),
+  "gender": zod.enum(['Male', 'Female']).nullish(),
+  "gpa": zod.number().nullish(),
   "role": zod.enum(['student', 'admin']),
   "createdAt": zod.coerce.date(),
-  "connectStatus": zod.enum(['none', 'pending_sent', 'pending_received', 'connected']).describe('Connect status relative to the authenticated viewer')
-}).describe('Public-safe user view – never includes email or phone')
+  "connectStatus": zod.enum(['none', 'pending_sent', 'pending_received', 'connected']),
+  "email": zod.string().nullish().describe('Only present when connected'),
+  "phone": zod.string().nullish().describe('Only present when connected and phone is set')
+}).describe('Profile view plus optional contact info when connected')
 export const AdminListUsersResponse = zod.array(AdminListUsersResponseItem)
 
 
@@ -460,7 +537,15 @@ export const AdminListProjectsResponseItem = zod.object({
   "status": zod.enum(['open', 'in_progress', 'closed']),
   "ownerId": zod.number(),
   "ownerName": zod.string(),
+  "leaderId": zod.number().optional(),
+  "leaderName": zod.string().nullish(),
   "teamSizeCap": zod.number(),
+  "maxMembers": zod.number(),
+  "memberCount": zod.number().optional(),
+  "track": zod.string().nullish(),
+  "canApply": zod.boolean().optional(),
+  "isLeader": zod.boolean().optional(),
+  "isMember": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
 export const AdminListProjectsResponse = zod.array(AdminListProjectsResponseItem)

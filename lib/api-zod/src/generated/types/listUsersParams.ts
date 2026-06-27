@@ -5,6 +5,7 @@
  * GradHub API – student project & teammate finder for Ain Shams Engineering
  * OpenAPI spec version: 0.1.0
  */
+import type { ListUsersConnectionStatus } from './listUsersConnectionStatus';
 
 export type ListUsersParams = {
 /**
@@ -19,4 +20,12 @@ major?: string;
  * Free-text search across name and bio
  */
 search?: string;
+/**
+ * Filter users by track
+ */
+track?: string;
+/**
+ * Filter users by connection status relative to the authenticated viewer
+ */
+connectionStatus?: ListUsersConnectionStatus;
 };

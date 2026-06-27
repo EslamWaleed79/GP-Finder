@@ -183,6 +183,17 @@ paths:
           schema:
             type: string
           description: Free-text search across name and bio
+        - in: query
+          name: track
+          schema:
+            type: string
+          description: Filter users by track
+        - in: query
+          name: connectionStatus
+          schema:
+            type: string
+            enum: [pending_sent, pending_received, connected, all]
+          description: Filter users by connection status relative to the authenticated viewer
       responses:
         "200":
           description: List of profiles
@@ -272,6 +283,11 @@ paths:
           schema:
             type: string
           description: Free-text search across title and description
+        - in: query
+          name: track
+          schema:
+            type: string
+          description: Filter projects by track
       responses:
         "200":
           description: List of projects
@@ -517,7 +533,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ProfileView"
+                  $ref: "#/components/schemas/UserDetailView"
 
   /admin/users/{id}:
     delete:
@@ -695,6 +711,18 @@ components:
         cvLink:
           type: ["string", "null"]
           format: uri
+        track:
+          type: ["string", "null"]
+        customTrack:
+          type: ["string", "null"]
+        bylaw:
+          type: ["string", "null"]
+          enum: ["2018", "2023"]
+        gender:
+          type: ["string", "null"]
+          enum: ["Male", "Female"]
+        gpa:
+          type: ["number", "null"]
         role:
           type: string
           enum: [student, admin]
@@ -726,6 +754,18 @@ components:
         cvLink:
           type: ["string", "null"]
           format: uri
+        track:
+          type: ["string", "null"]
+        customTrack:
+          type: ["string", "null"]
+        bylaw:
+          type: ["string", "null"]
+          enum: ["2018", "2023"]
+        gender:
+          type: ["string", "null"]
+          enum: ["Male", "Female"]
+        gpa:
+          type: ["number", "null"]
         role:
           type: string
           enum: [student, admin]
@@ -760,11 +800,23 @@ components:
         cvLink:
           type: ["string", "null"]
           format: uri
+        track:
+          type: ["string", "null"]
+        customTrack:
+          type: ["string", "null"]
+        bylaw:
+          type: ["string", "null"]
+          enum: ["2018", "2023"]
+        gender:
+          type: ["string", "null"]
+          enum: ["Male", "Female"]
+        gpa:
+          type: ["number", "null"]
 
     # ── Project ─────────────────────────────────────────────────────────
     Project:
       type: object
-      required: [id, title, description, requiredSkills, status, ownerId, ownerName, teamSizeCap, createdAt]
+      required: [id, title, description, requiredSkills, status, ownerId, ownerName, teamSizeCap, maxMembers, createdAt]
       properties:
         id:
           type: integer
@@ -783,15 +835,31 @@ components:
           type: integer
         ownerName:
           type: string
+        leaderId:
+          type: integer
+        leaderName:
+          type: ["string", "null"]
         teamSizeCap:
           type: integer
+        maxMembers:
+          type: integer
+        memberCount:
+          type: integer
+        track:
+          type: ["string", "null"]
+        canApply:
+          type: boolean
+        isLeader:
+          type: boolean
+        isMember:
+          type: boolean
         createdAt:
           type: string
           format: date-time
 
     ProjectDetail:
       type: object
-      required: [id, title, description, requiredSkills, status, ownerId, ownerName, teamSizeCap, createdAt, connectStatus]
+      required: [id, title, description, requiredSkills, status, ownerId, ownerName, teamSizeCap, maxMembers, createdAt, connectStatus]
       properties:
         id:
           type: integer
@@ -810,8 +878,24 @@ components:
           type: integer
         ownerName:
           type: string
+        leaderId:
+          type: integer
+        leaderName:
+          type: ["string", "null"]
         teamSizeCap:
           type: integer
+        maxMembers:
+          type: integer
+        memberCount:
+          type: integer
+        track:
+          type: ["string", "null"]
+        canApply:
+          type: boolean
+        isLeader:
+          type: boolean
+        isMember:
+          type: boolean
         createdAt:
           type: string
           format: date-time

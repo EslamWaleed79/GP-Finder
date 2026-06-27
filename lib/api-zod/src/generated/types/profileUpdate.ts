@@ -5,6 +5,8 @@
  * GradHub API – student project & teammate finder for Ain Shams Engineering
  * OpenAPI spec version: 0.1.0
  */
+import type { ProfileUpdateBylaw } from './profileUpdateBylaw';
+import type { ProfileUpdateGender } from './profileUpdateGender';
 
 export interface ProfileUpdate {
   name?: string;
@@ -16,4 +18,14 @@ export interface ProfileUpdate {
   phone?: string | null;
   /** @nullable */
   cvLink?: string | null;
+  /** @nullable */
+  track?: string | null;
+  /** @nullable */
+  customTrack?: string | null;
+  /** @nullable */
+  bylaw?: ProfileUpdateBylaw;
+  /** @nullable */
+  gender?: ProfileUpdateGender;
+  /** @nullable */
+  gpa?: number | null;
 }

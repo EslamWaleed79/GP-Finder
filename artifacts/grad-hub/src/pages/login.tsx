@@ -18,6 +18,7 @@ const loginSchema = z.object({
 
 export default function Login() {
   const { toast } = useToast();
+  const [_, setLocation] = useLocation();
   
   const login = useLogin({
     mutation: {

@@ -133,6 +133,18 @@ export class UserValidationService {
     }
 
     if (
+      !payload.bio ||
+      typeof payload.bio !== "string" ||
+      payload.bio.trim().length < 20
+    ) {
+      return { valid: false, error: "Bio must be at least 20 characters" };
+    }
+
+    if (payload.bio.trim().length > 500) {
+      return { valid: false, error: "Bio must be at most 500 characters" };
+    }
+
+    if (
       !payload.gender ||
       !VALID_GENDERS.includes(
         payload.gender as (typeof VALID_GENDERS)[number]

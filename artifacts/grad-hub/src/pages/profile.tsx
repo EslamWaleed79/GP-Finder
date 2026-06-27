@@ -113,7 +113,7 @@ export default function Profile() {
         bylaw: (me.bylaw as any) ?? undefined,
         gender: (me.gender as any) ?? undefined,
         gpa: me.gpa ?? undefined,
-        phone: me.phone ?? "",
+        phone: "",
         cvLink: me.cvLink ?? "",
         skills: me.skills ?? [],
         bio: me.bio ?? "",
@@ -322,9 +322,6 @@ export default function Profile() {
               <Button type="submit" disabled={updateProfile.isPending}>
                 {updateProfile.isPending ? "Saving..." : "Save Changes"}
               </Button>
-              <div className="text-xs text-muted-foreground">
-                Email: <span className="font-medium">{me.email}</span>
-              </div>
             </div>
           </form>
         </CardContent>

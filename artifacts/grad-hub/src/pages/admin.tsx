@@ -1,4 +1,5 @@
 import { useAdminListUsers, useAdminListProjects, useAdminDeleteUser, useAdminDeleteProject, getAdminListUsersQueryKey, getAdminListProjectsQueryKey } from "@workspace/api-client-react";
+import type { UserDetailView } from "@workspace/api-client-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,7 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => (
+                  {users.map((u: UserDetailView) => (
                     <tr key={u.id} className="border-b last:border-0 hover:bg-muted/50">
                       <td className="p-3">{u.name}</td>
                       <td className="p-3">{u.email}</td>

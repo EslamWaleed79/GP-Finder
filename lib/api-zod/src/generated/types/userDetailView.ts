@@ -5,7 +5,9 @@
  * GradHub API – student project & teammate finder for Ain Shams Engineering
  * OpenAPI spec version: 0.1.0
  */
+import type { UserDetailViewBylaw } from './userDetailViewBylaw';
 import type { UserDetailViewConnectStatus } from './userDetailViewConnectStatus';
+import type { UserDetailViewGender } from './userDetailViewGender';
 import type { UserDetailViewRole } from './userDetailViewRole';
 
 /**
@@ -20,6 +22,16 @@ export interface UserDetailView {
   bio?: string | null;
   /** @nullable */
   cvLink?: string | null;
+  /** @nullable */
+  track?: string | null;
+  /** @nullable */
+  customTrack?: string | null;
+  /** @nullable */
+  bylaw?: UserDetailViewBylaw;
+  /** @nullable */
+  gender?: UserDetailViewGender;
+  /** @nullable */
+  gpa?: number | null;
   role: UserDetailViewRole;
   createdAt: Date;
   connectStatus: UserDetailViewConnectStatus;

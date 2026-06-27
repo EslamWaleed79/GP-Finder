@@ -3,8 +3,11 @@ import {
   useListUsers,
   useGetMe,
   useSendConnection,
+  useRespondConnection,
+  useListConnections,
   getListProjectsQueryKey,
   getListUsersQueryKey,
+  getListConnectionsQueryKey,
 } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Link } from "wouter";
@@ -33,7 +36,7 @@ const TRACKS = [
   "Other",
 ];
 
-function trackBadgeText(track: string | null, customTrack: string | null): string {
+function trackBadgeText(track: string | null | undefined, customTrack: string | null | undefined): string {
   if (!track) return "Unknown";
   if (track === "Other") return customTrack || "Other";
   return track;
@@ -64,9 +67,12 @@ export default function Dashboard() {
   const { data: users = [], isLoading: loadingUsers } = useListUsers({
     search: search || undefined,
     track: trackFilter !== "All" ? trackFilter : undefined,
-    bylaw: bylawFilter !== "All" ? bylawFilter : undefined,
-    gender: genderFilter !== "All" ? genderFilter : undefined,
   });
+
+  const filteredUsers = users.filter((user) =>
+    (bylawFilter === "All" || user.bylaw === bylawFilter) &&
+    (genderFilter === "All" || user.gender === genderFilter)
+  );
 
   const applyToProject = useSendConnection({
     mutation: {
@@ -80,8 +86,31 @@ export default function Dashboard() {
     },
   });
 
+  const respondConnection = useRespondConnection({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListConnectionsQueryKey() });
+        toast({ title: "Connection request updated" });
+      },
+      onError: (err: any) => {
+        toast({ title: "Unable to update request", description: err?.message || "Please try again", variant: "destructive" });
+      },
+    },
+  });
+
+  const { data: connectionData } = useListConnections();
+  const incomingRequestMap = new Map<number, number>();
+  connectionData?.incoming.forEach((req) => {
+    incomingRequestMap.set(req.senderId, req.id);
+  });
+
+  const handleRespond = (requestId: number, status: "accepted" | "declined") => {
+    respondConnection.mutate({ id: requestId, data: { status } });
+  };
+
   // Sort: viewer's track first
-  const sortedUsers = [...users].sort((a, b) => {
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
     const aMatch = a.track === me?.track ? 0 : 1;
     const bMatch = b.track === me?.track ? 0 : 1;
     if (aMatch !== bMatch) return aMatch - bMatch;
@@ -187,7 +216,7 @@ export default function Dashboard() {
                           className="text-xs"
                           disabled={applyToProject.isPending}
                           onClick={() =>
-                            applyToProject.mutate({ data: { recipientId: project.leaderId, projectId: project.id } })
+                            applyToProject.mutate({ data: { recipientId: project.leaderId ?? project.ownerId, projectId: project.id } })
                           }
                         >
                           Apply
@@ -281,16 +310,46 @@ export default function Dashboard() {
                           <Badge variant="secondary" className="text-[10px]">+{user.skills.length - 3}</Badge>
                         )}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <Badge
-                          variant={user.connectStatus === "connected" ? "default" : "outline"}
-                          className="text-[10px]"
-                        >
-                          {user.connectStatus.replace("_", " ")}
-                        </Badge>
-                        <Button variant="ghost" size="sm" asChild className="text-xs">
-                          <Link href={`/users/${user.id}`}>Profile</Link>
-                        </Button>
+                      <div className="flex flex-col gap-2">
+                        {user.connectStatus === "pending_received" ? (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => {
+                                const requestId = incomingRequestMap.get(user.id);
+                                if (requestId) handleRespond(requestId, "accepted");
+                              }}
+                              disabled={respondConnection.isPending || !incomingRequestMap.has(user.id)}
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs"
+                              onClick={() => {
+                                const requestId = incomingRequestMap.get(user.id);
+                                if (requestId) handleRespond(requestId, "declined");
+                              }}
+                              disabled={respondConnection.isPending || !incomingRequestMap.has(user.id)}
+                            >
+                              Ignore
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <Badge
+                              variant={user.connectStatus === "connected" ? "default" : "outline"}
+                              className="text-[10px]"
+                            >
+                              {user.connectStatus.replace("_", " ")}
+                            </Badge>
+                            <Button variant="ghost" size="sm" asChild className="text-xs">
+                              <Link href={`/users/${user.id}`}>Profile</Link>
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

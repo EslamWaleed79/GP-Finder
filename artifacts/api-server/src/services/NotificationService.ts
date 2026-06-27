@@ -3,8 +3,8 @@ import type { INotificationProvider } from "./INotificationProvider.js";
 export class NotificationService {
   constructor(private provider: INotificationProvider) {}
 
-  async notifyConnectionRequest(recipientId: number, senderName: string): Promise<void> {
-    await this.provider.notify(recipientId, `${senderName} sent you a connection request`);
+  async notifyConnectionRequest(recipientId: number, senderId: number, senderName: string): Promise<void> {
+    await this.provider.notify(recipientId, `connection_request:${senderId}:${senderName} requested to connect`);
   }
 
   async notifyConnectionAccepted(senderId: number, recipientName: string): Promise<void> {

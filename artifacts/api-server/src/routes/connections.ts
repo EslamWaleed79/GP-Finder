@@ -44,7 +44,7 @@ router.post("/connections", (async (req, res) => {
 
   const sender = await userRepo.findById(req.session.userId);
   if (sender) {
-    await notificationService.notifyConnectionRequest(recipientId, sender.name);
+    await notificationService.notifyConnectionRequest(recipientId, sender.id, sender.name);
   }
 
   const rows = await connectionManager.listForUser(req.session.userId);

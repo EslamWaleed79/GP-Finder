@@ -41,7 +41,10 @@ const schema = z
     phone: z.string().regex(EGYPTIAN_PHONE_RE, "Must be a valid Egyptian mobile number"),
     cvLink: z.string().url("Please enter a valid Google Drive or web URL"),
     skills: z.array(z.string()).min(1, "Select at least one skill"),
-    bio: z.string().optional(),
+    bio: z
+      .string()
+      .min(20, "Bio must be at least 20 characters")
+      .max(500, "Bio must be at most 500 characters"),
   })
   .refine(
     (d) => d.track !== "Other" || (d.customTrack && d.customTrack.trim().length > 0),
@@ -106,16 +109,20 @@ export default function CompleteProfile() {
 
   useEffect(() => {
     if (me) {
+      const trackValue = me.track && TRACKS.includes(me.track as any)
+        ? (me.track as FormData["track"])
+        : undefined;
+
       form.reset({
-        track: (me.track as any) ?? undefined,
+        track: trackValue,
         customTrack: me.customTrack ?? "",
-        bylaw: (me.bylaw as any) ?? undefined,
-        gender: (me.gender as any) ?? undefined,
+        bylaw: me.bylaw ?? undefined,
+        gender: me.gender ?? undefined,
         gpa: me.gpa ?? undefined,
-        phone: me.phone ?? "",
+        phone: "",
         skills: me.skills ?? [],
         bio: me.bio ?? "",
-      });
+      } as any);
     }
   }, [me]);
 
@@ -126,8 +133,8 @@ export default function CompleteProfile() {
     updateProfile.mutate({
       id: me.id,
       data: {
-        track: data.track as any,
-        customTrack: data.track === "Other" ? data.customTrack ?? null : null,
+        track: data.track,
+        customTrack: data.track === "Other" ? data.customTrack ?? undefined : undefined,
         bylaw: data.bylaw,
         gender: data.gender,
         gpa: data.gpa,
@@ -263,8 +270,11 @@ export default function CompleteProfile() {
               {form.formState.errors.cvLink && <p className="text-sm text-destructive">{form.formState.errors.cvLink.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Bio <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Label>Bio <span className="text-destructive">*</span></Label>
               <Textarea {...form.register("bio")} placeholder="Tell us about your interests..." className="h-20" />
+              <p className="text-sm text-muted-foreground">Express yourself better to help teammates find you and find teammates.</p>
+              <p className="text-sm text-muted-foreground">{(form.watch("bio") ?? "").length} / 500 characters</p>
+              {form.formState.errors.bio && <p className="text-sm text-destructive">{form.formState.errors.bio.message}</p>}
             </div>
 
             <Button type="submit" className="w-full" disabled={updateProfile.isPending}>

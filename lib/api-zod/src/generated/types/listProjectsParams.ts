@@ -20,4 +20,8 @@ status?: ListProjectsStatus;
  * Free-text search across title and description
  */
 search?: string;
+/**
+ * Filter projects by track
+ */
+track?: string;
 };

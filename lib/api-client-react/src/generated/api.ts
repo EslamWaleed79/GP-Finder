@@ -1564,9 +1564,9 @@ export const getAdminListUsersUrl = () => {
 /**
  * @summary Admin – list all users
  */
-export const adminListUsers = async ( options?: RequestInit): Promise<ProfileView[]> => {
+export const adminListUsers = async ( options?: RequestInit): Promise<UserDetailView[]> => {
 
-  return customFetch<ProfileView[]>(getAdminListUsersUrl(),
+  return customFetch<UserDetailView[]>(getAdminListUsersUrl(),
   {
     ...options,
     method: 'GET'

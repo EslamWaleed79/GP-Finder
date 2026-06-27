@@ -16,7 +16,17 @@ export interface ProjectDetail {
   status: ProjectDetailStatus;
   ownerId: number;
   ownerName: string;
+  leaderId?: number;
+  /** @nullable */
+  leaderName?: string | null;
   teamSizeCap: number;
+  maxMembers: number;
+  memberCount?: number;
+  /** @nullable */
+  track?: string | null;
+  canApply?: boolean;
+  isLeader?: boolean;
+  isMember?: boolean;
   createdAt: Date;
   /** Viewer's connect status with the project owner */
   connectStatus: ProjectDetailConnectStatus;

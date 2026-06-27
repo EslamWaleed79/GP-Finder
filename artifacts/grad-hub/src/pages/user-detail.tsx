@@ -1,7 +1,10 @@
 import {
   useGetUser,
   useSendConnection,
+  useRespondConnection,
+  useListConnections,
   getGetUserQueryKey,
+  getListConnectionsQueryKey,
   useGetMe,
 } from "@workspace/api-client-react";
 import { useParams } from "wouter";
@@ -10,8 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
+import { ArrowUpRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-function trackDisplay(track: string | null, customTrack: string | null): string {
+function trackDisplay(track: string | null | undefined, customTrack: string | null | undefined): string {
   if (!track) return "";
   return track === "Other" ? customTrack ?? "Other" : track;
 }
@@ -20,6 +25,7 @@ export default function UserDetail() {
   const params = useParams();
   const id = parseInt(params.id || "0", 10);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: me } = useGetMe();
   const { data: user, isLoading } = useGetUser(id, {
@@ -34,10 +40,34 @@ export default function UserDetail() {
     },
   });
 
+  const respondConnection = useRespondConnection({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        toast({ title: "Connection request updated" });
+      },
+      onError: (err: any) => {
+        toast({ title: "Unable to update request", description: err?.message || "Please try again", variant: "destructive" });
+      },
+    },
+  });
+
+  const { data: connections } = useListConnections();
+
   if (isLoading) return <div>Loading user...</div>;
   if (!user) return <div>User not found</div>;
 
   const isSelf = me?.id === user.id;
+
+  const incomingRequest = connections?.incoming.find((req) => req.senderId === user.id);
+
+  const handleRespond = (status: "accepted" | "declined") => {
+    if (!incomingRequest) {
+      toast({ title: "Unable to respond", description: "Pending request not found.", variant: "destructive" });
+      return;
+    }
+    respondConnection.mutate({ id: incomingRequest.id, data: { status } });
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -73,7 +103,22 @@ export default function UserDetail() {
                   <Badge variant="secondary" className="px-3 py-1">Pending Approval</Badge>
                 )}
                 {user.connectStatus === "pending_received" && (
-                  <Badge variant="secondary" className="px-3 py-1">Pending (they sent request)</Badge>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => handleRespond("accepted")}
+                      disabled={respondConnection.isPending}
+                      className="bg-emerald-600 text-white hover:bg-emerald-700"
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRespond("declined")}
+                      disabled={respondConnection.isPending}
+                    >
+                      Ignore
+                    </Button>
+                  </div>
                 )}
                 {user.connectStatus === "connected" && (
                   <Badge variant="default" className="px-3 py-1 bg-green-600 hover:bg-green-700">Connected</Badge>
@@ -113,6 +158,20 @@ export default function UserDetail() {
                   <div>
                     <p className="text-sm text-muted-foreground">Phone</p>
                     <a href={`tel:${user.phone}`} className="text-primary hover:underline">{user.phone}</a>
+                  </div>
+                )}
+                {user.cvLink && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">CV</p>
+                    <a
+                      href={user.cvLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <span>View CV</span>
+                      <ArrowUpRight className="w-4 h-4" />
+                    </a>
                   </div>
                 )}
                 {user.gpa != null && (

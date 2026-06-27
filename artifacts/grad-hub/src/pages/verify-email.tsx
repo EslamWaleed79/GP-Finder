@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
 const verifySchema = z.object({
@@ -153,6 +154,9 @@ export default function VerifyEmail() {
               If your email address is incorrect, please use <button type="button" onClick={handleGoBackToSignup} className="text-primary hover:underline font-medium">Go back to Sign Up</button> to start over.
             </p>
           </div>
+          <Alert variant="destructive" className="mt-4">
+            Didn't receive the email? Check your spam/junk folder.
+          </Alert>
           <div className="mt-4 text-center text-sm">
             Already verified? <Link href="/login" className="text-primary hover:underline font-medium">Log in</Link>
           </div>

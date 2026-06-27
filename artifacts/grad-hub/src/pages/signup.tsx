@@ -64,7 +64,10 @@ const step2Schema = z
       .regex(EGYPTIAN_PHONE_RE, "Must be a valid Egyptian mobile number (e.g. 01012345678)"),
     skills: z.array(z.string()).min(1, "Select at least one skill"),
     cvLink: z.string().url("Please enter a valid Google Drive or web URL"),
-    bio: z.string().optional(),
+    bio: z
+      .string()
+      .min(20, "Bio must be at least 20 characters")
+      .max(500, "Bio must be at most 500 characters"),
   })
   .refine(
     (d) => d.track !== "Other" || (d.customTrack && d.customTrack.trim().length > 0),
@@ -332,8 +335,13 @@ export default function Signup() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Bio <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                <Label>Bio <span className="text-destructive">*</span></Label>
                 <Textarea {...form2.register("bio")} placeholder="Tell us about your interests..." className="h-20" />
+                <p className="text-sm text-muted-foreground">Express yourself better to help teammates find you and find teammates.</p>
+                <p className="text-sm text-muted-foreground">{(form2.watch("bio") ?? "").length} / 500 characters</p>
+                {form2.formState.errors.bio && (
+                  <p className="text-sm text-destructive">{form2.formState.errors.bio.message}</p>
+                )}
               </div>
 
               <div className="flex gap-2 pt-2">
