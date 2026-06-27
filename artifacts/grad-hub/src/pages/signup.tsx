@@ -68,6 +68,7 @@ const step2Schema = z
       .string()
       .regex(EGYPTIAN_PHONE_RE, "Must be a valid Egyptian mobile number (e.g. 01012345678)"),
     skills: z.array(z.string()).min(1, "Select at least one skill"),
+    cvLink: z.string().url("Please enter a valid Google Drive or web URL"),
     bio: z.string().optional(),
   })
   .refine(
@@ -127,6 +128,7 @@ export default function Signup() {
       gpa: undefined as any,
       phone: "",
       skills: [],
+      cvLink: "",
       bio: "",
     },
   });
@@ -325,6 +327,14 @@ export default function Signup() {
               </div>
 
               {/* Bio */}
+              <div className="space-y-2">
+                <Label>CV / Resume Link</Label>
+                <Input {...form2.register("cvLink")} placeholder="https://drive.google.com/..." />
+                <p className="text-sm text-amber-600">⚠️ Instructions: Ensure your Google Drive file sharing permissions are set to 'Anyone with the link can view' so teams, project leaders, and connections can successfully review your resume.</p>
+                {form2.formState.errors.cvLink && (
+                  <p className="text-sm text-destructive">{form2.formState.errors.cvLink.message}</p>
+                )}
+              </div>
               <div className="space-y-2">
                 <Label>Bio <span className="text-muted-foreground text-xs">(optional)</span></Label>
                 <Textarea {...form2.register("bio")} placeholder="Tell us about your interests..." className="h-20" />

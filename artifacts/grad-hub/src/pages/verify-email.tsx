@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,6 +39,8 @@ export default function VerifyEmail() {
     },
   });
 
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
   const isSubmitting = verifyEmail.isPending;
 
   const form = useForm<VerifyData>({
@@ -56,6 +58,36 @@ export default function VerifyEmail() {
 
   const onSubmit = (data: VerifyData) => {
     verifyEmail.mutate({ data });
+  };
+
+  const onResendOtp = async () => {
+    const email = form.getValues("email").trim();
+    if (!email) {
+      setResendStatus("Enter your email before requesting a new code.");
+      return;
+    }
+
+    setResendLoading(true);
+    setResendStatus(null);
+
+    try {
+      const response = await fetch("/api/auth/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.error || "Failed to resend OTP");
+      }
+
+      setResendStatus("Verification code resent. Check your inbox.");
+    } catch (error: any) {
+      setResendStatus(error?.message || "Unable to resend OTP.");
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   return (
@@ -87,6 +119,14 @@ export default function VerifyEmail() {
               {isSubmitting ? "Verifying..." : "Verify Email"}
             </Button>
           </form>
+          <div className="mt-4 flex flex-col gap-3">
+            <Button type="button" variant="outline" className="w-full" onClick={onResendOtp} disabled={resendLoading}>
+              {resendLoading ? "Sending..." : "Resend Verification Code"}
+            </Button>
+            {resendStatus && (
+              <p className="text-sm text-center text-muted-foreground">{resendStatus}</p>
+            )}
+          </div>
           <div className="mt-4 text-center text-sm text-muted-foreground">
             Didn’t receive the code? Check your spam folder or try signing up again.
           </div>

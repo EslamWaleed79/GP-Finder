@@ -67,6 +67,8 @@ export const usersTable = pgTable("users", {
   isVerified: boolean("is_verified").notNull().default(false),
   verificationCode: varchar("verification_code", { length: 6 }),
   verificationExpires: timestamp("verification_expires"),
+  verificationRequestedAt: timestamp("verification_requested_at"),
+  verificationAttempts: integer("verification_attempts").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

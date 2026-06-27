@@ -39,6 +39,7 @@ const schema = z
     gender: z.enum(["Male", "Female"] as const, { required_error: "Gender is required" }),
     gpa: z.coerce.number().min(0).max(4.0, "GPA must be ≤ 4.0"),
     phone: z.string().regex(EGYPTIAN_PHONE_RE, "Must be a valid Egyptian mobile number"),
+    cvLink: z.string().url("Please enter a valid Google Drive or web URL"),
     skills: z.array(z.string()).min(1, "Select at least one skill"),
     bio: z.string().optional(),
   })
@@ -97,6 +98,7 @@ export default function CompleteProfile() {
       gender: undefined,
       gpa: undefined as any,
       phone: "",
+      cvLink: "",
       skills: [],
       bio: "",
     },
@@ -254,6 +256,12 @@ export default function CompleteProfile() {
               {form.formState.errors.skills && <p className="text-sm text-destructive">{form.formState.errors.skills.message}</p>}
             </div>
 
+            <div className="space-y-2">
+              <Label>CV / Resume Link</Label>
+              <Input {...form.register("cvLink")} placeholder="https://drive.google.com/..." />
+              <p className="text-sm text-amber-600">⚠️ Instructions: Ensure your Google Drive file sharing permissions are set to 'Anyone with the link can view' so teams, project leaders, and connections can successfully review your resume.</p>
+              {form.formState.errors.cvLink && <p className="text-sm text-destructive">{form.formState.errors.cvLink.message}</p>}
+            </div>
             <div className="space-y-2">
               <Label>Bio <span className="text-muted-foreground text-xs">(optional)</span></Label>
               <Textarea {...form.register("bio")} placeholder="Tell us about your interests..." className="h-20" />

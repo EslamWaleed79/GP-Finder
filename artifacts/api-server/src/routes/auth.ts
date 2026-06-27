@@ -6,9 +6,8 @@ import { UserValidationService } from "../services/UserValidationService.js";
 import { SelfViewStrategy } from "../services/strategies/ContactVisibilityStrategy.js";
 import { signJwt } from "../lib/jwt.js";
 import { sendVerificationEmail } from "../lib/mailer.js";
-import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, usersTable } from "@workspace/db";
+import { eq, and, or, lt, lte } from "drizzle-orm";
 import type { RequestHandler } from "express";
 
 const router = Router();
@@ -36,8 +35,9 @@ router.post("/auth/signup", (async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(payload.password as string, 12);
-  const otp = crypto.randomInt(100000, 999999).toString();
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const otp = crypto.randomInt(100000, 999999).toString().padStart(6, "0");
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
 
   const user = await userRepo.create({
     name: (payload.name as string).trim(),
@@ -59,7 +59,9 @@ router.post("/auth/signup", (async (req, res) => {
     isVerified: false,
     verificationCode: otp,
     verificationExpires: expiresAt,
-    cvLink: null,
+    verificationRequestedAt: now,
+    verificationAttempts: 1,
+    cvLink: payload.cvLink ? (payload.cvLink as string).trim() : null,
   });
 
   // Fire-and-forget sending the verification email so mail failures don't block signup
@@ -98,6 +100,72 @@ router.post("/auth/verify-email", (async (req, res) => {
     .where(eq(usersTable.id, user.id));
 
   return res.status(200).json({ message: "Verified successfully!" });
+}) as RequestHandler);
+
+router.post("/auth/resend-otp", (async (req, res) => {
+  const { email } = req.body as { email?: string };
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await userRepo.findByEmail(normalizedEmail);
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  if (user.isVerified) {
+    return res.status(400).json({ error: "Account already verified" });
+  }
+
+  const now = new Date();
+  const nextAllowedRequest = user.verificationRequestedAt
+    ? new Date(new Date(user.verificationRequestedAt).getTime() + 60 * 1000)
+    : new Date(0);
+
+  if (user.verificationAttempts >= 4) {
+    return res.status(429).json({ error: "Maximum OTP resend attempts exceeded. Contact support." });
+  }
+
+  if (now < nextAllowedRequest) {
+    const waitSeconds = Math.ceil((nextAllowedRequest.getTime() - now.getTime()) / 1000);
+    return res.status(429).json({ error: `Please wait ${waitSeconds} seconds before requesting a new code.` });
+  }
+
+  const otp = crypto.randomInt(100000, 999999).toString().padStart(6, "0");
+  const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
+
+  const [updatedUser] = await db
+    .update(usersTable)
+    .set({
+      verificationCode: otp,
+      verificationExpires: expiresAt,
+      verificationRequestedAt: now,
+      verificationAttempts: (user.verificationAttempts || 0) + 1,
+    })
+    .where(
+      and(
+        eq(usersTable.id, user.id),
+        lt(usersTable.verificationAttempts, 4),
+        or(
+          eq(usersTable.verificationRequestedAt, null),
+          lte(usersTable.verificationRequestedAt, new Date(now.getTime() - 60 * 1000)),
+        ),
+      ),
+    );
+
+  if (!updatedUser) {
+    return res.status(429).json({ error: "Unable to resend OTP at this time. Try again later." });
+  }
+
+  try {
+    await sendVerificationEmail(normalizedEmail, otp);
+  } catch (err) {
+    console.error("sendVerificationEmail failed:", err);
+  }
+
+  return res.status(200).json({ message: "Verification email resent successfully." });
 }) as RequestHandler);
 
 router.post("/auth/login", (async (req, res) => {

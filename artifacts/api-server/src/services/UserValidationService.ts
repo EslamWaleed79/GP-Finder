@@ -110,6 +110,23 @@ export class UserValidationService {
     }
 
     if (
+      !payload.cvLink ||
+      typeof payload.cvLink !== "string" ||
+      payload.cvLink.trim().length === 0
+    ) {
+      return { valid: false, error: "CV link is required" };
+    }
+
+    try {
+      const url = new URL(payload.cvLink.trim());
+      if (url.protocol !== "http:" && url.protocol !== "https:") {
+        return { valid: false, error: "CV link must be a valid URL" };
+      }
+    } catch {
+      return { valid: false, error: "CV link must be a valid URL" };
+    }
+
+    if (
       !payload.gender ||
       !VALID_GENDERS.includes(
         payload.gender as (typeof VALID_GENDERS)[number]
