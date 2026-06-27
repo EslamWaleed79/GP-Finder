@@ -7,6 +7,7 @@ import {
   integer,
   pgEnum,
   real,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", ["student", "admin"]);
