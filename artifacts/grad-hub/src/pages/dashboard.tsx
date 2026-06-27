@@ -42,9 +42,9 @@ function trackBadgeText(track: string | null | undefined, customTrack: string | 
   return track;
 }
 
-function statusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+function statusVariant(status: string): "default" | "destructive" | "outline" {
   if (status === "open") return "default";
-  if (status === "in_progress") return "secondary";
+  if (status === "closed") return "destructive";
   return "outline";
 }
 
@@ -219,6 +219,7 @@ export default function Dashboard() {
                           applyToProject.isPending ||
                           !project.canApply ||
                           project.isMember ||
+                          project.status !== "open" ||
                           appliedProjectIds.includes(project.id)
                         }
                         onClick={() => applyToProject.mutate({ data: { projectId: project.id } })}

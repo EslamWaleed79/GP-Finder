@@ -11,6 +11,5 @@ export type ProjectInputStatus = typeof ProjectInputStatus[keyof typeof ProjectI
 
 export const ProjectInputStatus = {
   open: 'open',
-  in_progress: 'in_progress',
   closed: 'closed',
 } as const;

@@ -238,7 +238,6 @@ export type ProjectStatus = typeof ProjectStatus[keyof typeof ProjectStatus];
 
 export const ProjectStatus = {
   open: 'open',
-  in_progress: 'in_progress',
   closed: 'closed',
 } as const;
 
@@ -269,7 +268,6 @@ export type ProjectDetailStatus = typeof ProjectDetailStatus[keyof typeof Projec
 
 export const ProjectDetailStatus = {
   open: 'open',
-  in_progress: 'in_progress',
   closed: 'closed',
 } as const;
 
@@ -315,7 +313,6 @@ export type ProjectInputStatus = typeof ProjectInputStatus[keyof typeof ProjectI
 
 export const ProjectInputStatus = {
   open: 'open',
-  in_progress: 'in_progress',
   closed: 'closed',
 } as const;
 
@@ -338,7 +335,6 @@ export type ProjectUpdateStatus = typeof ProjectUpdateStatus[keyof typeof Projec
 
 export const ProjectUpdateStatus = {
   open: 'open',
-  in_progress: 'in_progress',
   closed: 'closed',
 } as const;
 
@@ -546,7 +542,6 @@ export type ListProjectsStatus = typeof ListProjectsStatus[keyof typeof ListProj
 
 export const ListProjectsStatus = {
   open: 'open',
-  in_progress: 'in_progress',
   closed: 'closed',
 } as const;
 

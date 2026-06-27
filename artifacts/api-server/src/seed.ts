@@ -133,7 +133,7 @@ export async function runSeed() {
       description:
         "A BitTorrent-inspired distributed file sharing system with end-to-end encryption, a discovery server, and a modern React frontend. Focus on network protocol design and distributed systems concepts.",
       requiredSkills: ["TypeScript", "Node.js", "React", "Networking", "Docker"],
-      status: "in_progress",
+      status: "open",
       ownerId: sara!.id,
       teamSizeCap: 3,
     })

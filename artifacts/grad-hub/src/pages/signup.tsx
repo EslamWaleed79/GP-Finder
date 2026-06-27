@@ -44,7 +44,7 @@ const EGYPTIAN_PHONE_RE = /^01[0-2,5]{1}[0-9]{8}$/;
 
 const step1Schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Enter a valid email address"),
+  email: z.string().email("Enter a valid personal email address"),
   universityId: z.string().regex(/^\d{7,8}$/, "ID must be 7-8 digits"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
@@ -192,8 +192,8 @@ export default function Signup() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label>University Email</Label>
-                <Input {...form1.register("email")} placeholder="student@example.com" />
+                <Label>Personal Email</Label>
+                <Input {...form1.register("email")} placeholder="personal@example.com" />
                 {form1.formState.errors.email && (
                   <p className="text-sm text-destructive">{form1.formState.errors.email.message}</p>
                 )}

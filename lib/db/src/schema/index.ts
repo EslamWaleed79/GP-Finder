@@ -14,7 +14,6 @@ export const userRoleEnum = pgEnum("user_role", ["student", "admin"]);
 
 export const projectStatusEnum = pgEnum("project_status", [
   "open",
-  "in_progress",
   "closed",
 ]);
 

@@ -278,7 +278,7 @@ paths:
           name: status
           schema:
             type: string
-            enum: [open, in_progress, closed]
+            enum: [open, closed]
           description: Filter by project status
         - in: query
           name: search
@@ -970,7 +970,7 @@ components:
             type: string
         status:
           type: string
-          enum: [open, in_progress, closed]
+          enum: [open, closed]
         ownerId:
           type: integer
         ownerName:
@@ -1013,7 +1013,7 @@ components:
             type: string
         status:
           type: string
-          enum: [open, in_progress, closed]
+          enum: [open, closed]
         ownerId:
           type: integer
         ownerName:
@@ -1060,7 +1060,7 @@ components:
             type: string
         status:
           type: string
-          enum: [open, in_progress, closed]
+          enum: [open, closed]
           default: open
         teamSizeCap:
           type: integer
@@ -1080,7 +1080,7 @@ components:
             type: string
         status:
           type: string
-          enum: [open, in_progress, closed]
+          enum: [open, closed]
         teamSizeCap:
           type: integer
 

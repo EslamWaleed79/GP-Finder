@@ -124,7 +124,7 @@ export default function VerifyEmail() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold tracking-tight">Verify Your Email</CardTitle>
           <CardDescription>
-            Enter the 6-digit code sent to your university email to complete signup.
+            Enter the 6-digit code sent to your personal email to complete signup.
           </CardDescription>
         </CardHeader>
         <CardContent>

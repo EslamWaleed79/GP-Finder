@@ -109,7 +109,7 @@ export default function ProjectDetail() {
   if (!project) return <div>Project not found</div>;
 
   const statusVariant = (s: string) =>
-    s === "open" ? "default" : s === "in_progress" ? "secondary" : "outline";
+    s === "open" ? "default" : s === "closed" ? "destructive" : "outline";
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
@@ -169,7 +169,7 @@ export default function ProjectDetail() {
               {project.canApply && !project.isMember && (
                 <Button
                   onClick={() => applyToProject.mutate({ data: { projectId: project.id } })}
-                  disabled={applyToProject.isPending}
+                  disabled={applyToProject.isPending || project.status !== "open"}
                 >
                   {project.connectStatus === "pending_sent"
                     ? "Pending"
@@ -184,7 +184,7 @@ export default function ProjectDetail() {
               )}
               {project.status !== "open" && !project.canApply && me?.id !== project.leaderId && (
                 <Badge variant="secondary" className="px-4 py-2 text-sm">
-                  {project.status === "closed" ? "Closed" : "In Progress"}
+                  Closed
                 </Badge>
               )}
             </>

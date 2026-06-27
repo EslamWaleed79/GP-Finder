@@ -230,7 +230,7 @@ export const UpdateProfileResponse = zod.object({
  */
 export const ListProjectsQueryParams = zod.object({
   "skills": zod.coerce.string().optional().describe('Comma-separated required-skill tags to filter by'),
-  "status": zod.enum(['open', 'in_progress', 'closed']).optional().describe('Filter by project status'),
+  "status": zod.enum(['open', 'closed']).optional().describe('Filter by project status'),
   "search": zod.coerce.string().optional().describe('Free-text search across title and description'),
   "track": zod.coerce.string().optional().describe('Filter projects by track')
 })
@@ -240,7 +240,7 @@ export const ListProjectsResponseItem = zod.object({
   "title": zod.string(),
   "description": zod.string(),
   "requiredSkills": zod.array(zod.string()),
-  "status": zod.enum(['open', 'in_progress', 'closed']),
+  "status": zod.enum(['open', 'closed']),
   "ownerId": zod.number(),
   "ownerName": zod.string(),
   "leaderId": zod.number().optional(),
@@ -273,7 +273,7 @@ export const CreateProjectBody = zod.object({
   "title": zod.string().min(createProjectBodyTitleMin),
   "description": zod.string().min(createProjectBodyDescriptionMin),
   "requiredSkills": zod.array(zod.string()),
-  "status": zod.enum(['open', 'in_progress', 'closed']).default(createProjectBodyStatusDefault),
+  "status": zod.enum(['open', 'closed']).default(createProjectBodyStatusDefault),
   "teamSizeCap": zod.number().min(1).max(createProjectBodyTeamSizeCapMax)
 })
 
@@ -282,7 +282,7 @@ export const CreateProjectResponse = zod.object({
   "title": zod.string(),
   "description": zod.string(),
   "requiredSkills": zod.array(zod.string()),
-  "status": zod.enum(['open', 'in_progress', 'closed']),
+  "status": zod.enum(['open', 'closed']),
   "ownerId": zod.number(),
   "ownerName": zod.string(),
   "leaderId": zod.number().optional(),
@@ -310,7 +310,7 @@ export const GetProjectResponse = zod.object({
   "title": zod.string(),
   "description": zod.string(),
   "requiredSkills": zod.array(zod.string()),
-  "status": zod.enum(['open', 'in_progress', 'closed']),
+  "status": zod.enum(['open', 'closed']),
   "ownerId": zod.number(),
   "ownerName": zod.string(),
   "leaderId": zod.number().optional(),
@@ -338,7 +338,7 @@ export const UpdateProjectBody = zod.object({
   "title": zod.string().optional(),
   "description": zod.string().optional(),
   "requiredSkills": zod.array(zod.string()).optional(),
-  "status": zod.enum(['open', 'in_progress', 'closed']).optional(),
+  "status": zod.enum(['open', 'closed']).optional(),
   "teamSizeCap": zod.number().optional()
 })
 
@@ -347,7 +347,7 @@ export const UpdateProjectResponse = zod.object({
   "title": zod.string(),
   "description": zod.string(),
   "requiredSkills": zod.array(zod.string()),
-  "status": zod.enum(['open', 'in_progress', 'closed']),
+  "status": zod.enum(['open', 'closed']),
   "ownerId": zod.number(),
   "ownerName": zod.string(),
   "leaderId": zod.number().optional(),
@@ -611,7 +611,7 @@ export const AdminListProjectsResponseItem = zod.object({
   "title": zod.string(),
   "description": zod.string(),
   "requiredSkills": zod.array(zod.string()),
-  "status": zod.enum(['open', 'in_progress', 'closed']),
+  "status": zod.enum(['open', 'closed']),
   "ownerId": zod.number(),
   "ownerName": zod.string(),
   "leaderId": zod.number().optional(),

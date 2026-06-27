@@ -42,7 +42,7 @@ const projectSchema = z.object({
   track: z.enum(TRACKS, { required_error: "Track is required" }),
   requiredSkills: z.array(z.string()).min(1, "Select at least one skill"),
   maxMembers: z.coerce.number().min(1).max(20),
-  status: z.enum(["open", "in_progress", "closed"]).optional(),
+  status: z.enum(["open", "closed"]).optional(),
 });
 
 type ProjectData = z.infer<typeof projectSchema>;
@@ -222,7 +222,6 @@ export default function ProjectForm() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="closed">Closed</SelectItem>
                     </SelectContent>
                   </Select>

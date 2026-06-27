@@ -343,12 +343,7 @@ export class ProjectApplicationRepository {
       );
 
     const memberCount = Number(count);
-    const nextStatus =
-      memberCount >= project.maxMembers
-        ? "closed"
-        : memberCount > 0
-          ? "in_progress"
-          : "open";
+    const nextStatus = memberCount >= project.maxMembers ? "closed" : "open";
 
     if (project.status !== nextStatus) {
       await db

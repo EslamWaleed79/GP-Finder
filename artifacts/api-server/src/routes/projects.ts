@@ -12,7 +12,7 @@ const appRepo = new ProjectApplicationRepository();
 router.get("/projects", (async (req, res) => {
   const { skills, status, search, track } = req.query as {
     skills?: string;
-    status?: "open" | "in_progress" | "closed";
+    status?: "open" | "closed";
     search?: string;
     track?: string;
   };
@@ -69,7 +69,7 @@ router.post("/projects", (async (req, res) => {
       requiredSkills?: string[];
       teamSizeCap?: number;
       maxMembers?: number;
-      status?: "open" | "in_progress" | "closed";
+      status?: "open" | "closed";
       track?: string;
     };
 
@@ -142,9 +142,9 @@ router.patch("/projects/:id/status", (async (req, res) => {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { status } = req.body as { status?: "open" | "in_progress" | "closed" };
-  if (!status || !["open", "in_progress", "closed"].includes(status)) {
-    return res.status(400).json({ error: "status must be open|in_progress|closed" });
+  const { status } = req.body as { status?: "open" | "closed" };
+  if (!status || !["open", "closed"].includes(status)) {
+    return res.status(400).json({ error: "status must be open|closed" });
   }
 
   if (status === "open" && existing.status !== "open") {
@@ -208,7 +208,7 @@ router.patch("/projects/:id", (async (req, res) => {
       title?: string;
       description?: string;
       requiredSkills?: string[];
-      status?: "open" | "in_progress" | "closed";
+      status?: "open" | "closed";
       teamSizeCap?: number;
       maxMembers?: number;
       track?: string;

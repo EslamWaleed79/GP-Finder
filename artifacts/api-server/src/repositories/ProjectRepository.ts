@@ -133,7 +133,7 @@ export class ProjectRepository {
 
   async list(filters: {
     skills?: string[];
-    status?: "open" | "in_progress" | "closed";
+    status?: "open" | "closed";
     search?: string;
     track?: string;
   }): Promise<ProjectWithMeta[]> {
