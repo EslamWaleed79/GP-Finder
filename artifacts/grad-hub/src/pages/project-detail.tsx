@@ -57,6 +57,7 @@ export default function ProjectDetail() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
+        queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
         toast({ title: "Application submitted!" });
       },
       onError: (err: any) => {
@@ -138,12 +139,20 @@ export default function ProjectDetail() {
             </>
           ) : (
             <>
-              {project.canApply && (
+              {(project.canApply || project.connectStatus !== "none") && (
                 <Button
                   onClick={() => applyToProject.mutate({ data: { recipientId: project.leaderId ?? project.ownerId, projectId: project.id } })}
-                  disabled={applyToProject.isPending}
+                  disabled={applyToProject.isPending || project.connectStatus !== "none"}
                 >
-                  {applyToProject.isPending ? "Applying..." : "Apply to Join"}
+                  {project.connectStatus === "pending_sent"
+                    ? "Pending"
+                    : project.connectStatus === "pending_received"
+                    ? "Pending"
+                    : project.connectStatus === "connected"
+                    ? "Connected"
+                    : applyToProject.isPending
+                    ? "Applying..."
+                    : "Apply to Join"}
                 </Button>
               )}
               {project.status !== "open" && !project.canApply && me?.id !== project.leaderId && (

@@ -219,7 +219,7 @@ export default function Dashboard() {
                             applyToProject.mutate({ data: { recipientId: project.leaderId ?? project.ownerId, projectId: project.id } })
                           }
                         >
-                          Apply
+                          {applyToProject.isPending ? "Applying..." : "Apply"}
                         </Button>
                       )}
                     </div>

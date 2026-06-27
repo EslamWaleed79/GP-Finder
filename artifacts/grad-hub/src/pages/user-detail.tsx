@@ -4,6 +4,7 @@ import {
   useRespondConnection,
   useListConnections,
   getGetUserQueryKey,
+  getListUsersQueryKey,
   getListConnectionsQueryKey,
   useGetMe,
 } from "@workspace/api-client-react";
@@ -35,7 +36,9 @@ export default function UserDetail() {
   const sendConnection = useSendConnection({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries();
+        queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(id) });
+        queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListConnectionsQueryKey() });
       },
     },
   });
