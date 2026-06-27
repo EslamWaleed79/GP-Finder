@@ -81,9 +81,9 @@ export default function ProjectDetail() {
   const {
     data: applications = [],
     isLoading: loadingApplications,
-  } = useQuery<ProjectApplicationWithApplicant[]>(
-    ["projectApplications", id],
-    async () => {
+  } = useQuery<ProjectApplicationWithApplicant[]>({
+    queryKey: ["projectApplications", id],
+    queryFn: async () => {
       const response = await fetch(`/api/projects/${id}/applications`, {
         credentials: "include",
       });
@@ -93,11 +93,9 @@ export default function ProjectDetail() {
       }
       return response.json();
     },
-    {
-      enabled: isLeader && !!id,
-      retry: false,
-    }
-  );
+    enabled: isLeader && !!id,
+    retry: false,
+  });
 
   const decideApplication = useMutation(
     async ({ applicationId, action }: { applicationId: number; action: "accepted" | "rejected" | "removed" }) => {
