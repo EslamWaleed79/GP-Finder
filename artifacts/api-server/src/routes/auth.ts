@@ -1,18 +1,39 @@
 import { Router } from "express";
+import "express-session";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import { UserRepository } from "../repositories/UserRepository.js";
 import { UserValidationService } from "../services/UserValidationService.js";
 import { SelfViewStrategy } from "../services/strategies/ContactVisibilityStrategy.js";
-import { signJwt } from "../lib/jwt.js";
+import { JWT_SECRET, signJwt } from "../lib/jwt.js";
 import { sendVerificationEmail } from "../lib/mailer.js";
 import { db, usersTable } from "@workspace/db";
-import { eq, and, or, lt, lte } from "drizzle-orm";
+import { eq, and, or, lt, lte, isNull } from "drizzle-orm";
 import type { RequestHandler } from "express";
 
 const router = Router();
 const userRepo = new UserRepository();
 const validator = new UserValidationService();
+
+type PendingRegistrationPayload = {
+  email: string;
+  password: string;
+  name: string;
+  major: string;
+  skills: string[];
+  bio: string | null;
+  phone: string;
+  gpa: number;
+  bylaw: "2018" | "2023";
+  track: "Software Engineering" | "Hardware Design" | "Networks and Cybersecurity" | "AI" | "Embedded" | "Other" | null;
+  customTrack: string | null;
+  gender: "Male" | "Female";
+  role: "student" | "admin";
+  cvLink: string | null;
+  otp: string;
+  verificationAttempts: number;
+};
 
 declare module "express-session" {
   interface SessionData {
@@ -36,86 +57,89 @@ router.post("/auth/signup", (async (req, res) => {
 
   const passwordHash = await bcrypt.hash(payload.password as string, 12);
   const otp = crypto.randomInt(100000, 999999).toString().padStart(6, "0");
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
 
-  const user = await userRepo.create({
-    name: (payload.name as string).trim(),
+  const pendingRegistrationPayload: PendingRegistrationPayload = {
     email,
-    passwordHash,
+    password: passwordHash,
+    name: (payload.name as string).trim(),
     major: "Computer Engineering",
     skills: Array.isArray(payload.skills) ? (payload.skills as string[]) : [],
     bio: typeof payload.bio === "string" ? payload.bio : null,
     phone: payload.phone as string,
     gpa: Number(payload.gpa),
     bylaw: payload.bylaw as "2018" | "2023",
-    track: payload.track as any,
+    track: payload.track as PendingRegistrationPayload["track"],
     customTrack:
       payload.track === "Other" && typeof payload.customTrack === "string"
         ? payload.customTrack.trim()
         : null,
     gender: payload.gender as "Male" | "Female",
     role: "student",
-    isVerified: false,
-    verificationCode: otp,
-    verificationExpires: expiresAt,
-    verificationRequestedAt: now,
-    verificationAttempts: 1,
     cvLink: payload.cvLink ? (payload.cvLink as string).trim() : null,
-  });
+    otp,
+    verificationAttempts: 0,
+  };
 
-  // Fire-and-forget sending the verification email so mail failures don't block signup
+  const pendingRegistrationToken = signJwt(pendingRegistrationPayload, { expiresIn: "15m" });
+
   sendVerificationEmail(email, otp).catch((err) => {
     console.error("sendVerificationEmail failed:", err);
   });
+
+  return res.status(200).json({
+    message: "Verification email sent",
+    pendingRegistrationToken,
+  });
+}) as RequestHandler);
+
+router.post("/auth/verify-email", (async (req, res) => {
+  const { pendingRegistrationToken, otp } = req.body as {
+    pendingRegistrationToken?: string;
+    otp?: string;
+  };
+
+  if (!pendingRegistrationToken || !otp) {
+    return res.status(400).json({ error: "Pending registration token and OTP are required" });
+  }
+
+  let decodedPayload: PendingRegistrationPayload;
+  try {
+    const decoded = jwt.verify(pendingRegistrationToken, JWT_SECRET) as unknown;
+    if (typeof decoded !== "object" || decoded === null || !("email" in decoded) || !("otp" in decoded)) {
+      throw new Error("Invalid pending registration token");
+    }
+    decodedPayload = decoded as PendingRegistrationPayload;
+  } catch {
+    return res.status(400).json({ error: "Invalid or expired registration token" });
+  }
+
+  if (decodedPayload.otp !== otp.trim()) {
+    return res.status(400).json({ error: "Invalid or expired code" });
+  }
+
+  const { otp: tokenOtp, password, ...userData } = decodedPayload;
+  const [user] = await db
+    .insert(usersTable)
+    .values({
+      ...userData,
+      passwordHash: password,
+      isVerified: true,
+      verificationCode: null,
+      verificationExpires: null,
+      verificationRequestedAt: null,
+      verificationAttempts: 0,
+    })
+    .returning();
+
+  if (!user) {
+    return res.status(500).json({ error: "Failed to create account" });
+  }
 
   const strategy = new SelfViewStrategy();
   const view = strategy.buildView(user, "none");
   const token = signJwt({ userId: user.id, email: user.email, role: user.role });
 
-  return res.status(201).json({ token, user: view });
-}) as RequestHandler);
-
-router.post("/auth/verify-email", (async (req, res) => {
-  const { email, code } = req.body as { email?: string; code?: string };
-
-  if (!email || !code) {
-    return res.status(400).json({ error: "Email and code are required" });
-  }
-
-  const normalizedEmail = email.toLowerCase().trim();
-  const user = await userRepo.findByEmail(normalizedEmail);
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
-  }
-
-  console.log("verify-email lookup user:", {
-    id: user.id,
-    email: user.email,
-    isVerified: user.isVerified,
-    verificationCode: user.verificationCode,
-    verificationExpires: user.verificationExpires,
-  });
-
-  if (
-    user.isVerified ||
-    user.verificationCode !== code ||
-    !user.verificationExpires ||
-    new Date() > new Date(user.verificationExpires)
-  ) {
-    return res.status(400).json({ error: "Invalid or expired code" });
-  }
-
-  await db
-    .update(usersTable)
-    .set({
-      isVerified: true,
-      verificationCode: null,
-      verificationExpires: null,
-    })
-    .where(eq(usersTable.id, user.id));
-
-  return res.status(200).json({ message: "Verified successfully!" });
+  return res.status(200).json({ message: "Verified successfully!", token, user: view });
 }) as RequestHandler);
 
 router.post("/auth/resend-otp", (async (req, res) => {
@@ -165,7 +189,7 @@ router.post("/auth/resend-otp", (async (req, res) => {
         eq(usersTable.id, user.id),
         lt(usersTable.verificationAttempts, 4),
         or(
-          eq(usersTable.verificationRequestedAt, null),
+          isNull(usersTable.verificationRequestedAt),
           lte(usersTable.verificationRequestedAt, new Date(now.getTime() - 60 * 1000)),
         ),
       ),

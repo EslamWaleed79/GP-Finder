@@ -7,6 +7,6 @@
  */
 
 export type VerifyEmailBody = {
-  email: string;
-  code: string;
+  pendingRegistrationToken: string;
+  otp: string;
 };

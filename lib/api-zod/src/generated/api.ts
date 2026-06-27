@@ -81,8 +81,8 @@ export const LoginResponse = zod.object({
  * @summary Verify a signup email using a 6-digit code
  */
 export const VerifyEmailBody = zod.object({
-  "email": zod.string().email(),
-  "code": zod.string()
+  "pendingRegistrationToken": zod.string(),
+  "otp": zod.string()
 })
 
 export const VerifyEmailResponse = zod.object({

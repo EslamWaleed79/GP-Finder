@@ -90,14 +90,8 @@ export default function Signup() {
   const signup = useSignup({
     mutation: {
       onSuccess: (data: any) => {
-        if (data?.token) {
-          localStorage.setItem("token", data.token);
-        }
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(
-            "pendingVerificationEmail",
-            data?.user?.email ?? step1Data?.email ?? ""
-          );
+        if (typeof window !== "undefined" && data?.pendingRegistrationToken) {
+          window.sessionStorage.setItem("pendingRegistrationToken", data.pendingRegistrationToken);
         }
 
         queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });

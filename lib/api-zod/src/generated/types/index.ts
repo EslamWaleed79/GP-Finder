@@ -39,4 +39,4 @@ export * from './signupInput';
 export * from './userDetailView';
 export * from './userDetailViewConnectStatus';
 export * from './userDetailViewRole';
-export * from './verifyEmailBody';
+export type { VerifyEmailBody } from './verifyEmailBody';

@@ -110,13 +110,11 @@ paths:
             schema:
               type: object
               properties:
-                email:
+                pendingRegistrationToken:
                   type: string
-                  format: email
-                code:
+                otp:
                   type: string
-                
-              required: [email, code]
+              required: [pendingRegistrationToken, otp]
       responses:
         "200":
           description: Email verified successfully
