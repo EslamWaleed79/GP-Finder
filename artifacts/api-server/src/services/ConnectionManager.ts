@@ -131,7 +131,8 @@ export class ConnectionManager {
       ORDER BY cr.created_at DESC
     `);
 
-    const all = ((rows.rows ?? rows) as unknown) as ConnectRequestWithNames[];
+    const rowData = Array.isArray(rows) ? rows : ((rows as { rows?: ConnectRequestWithNames[] }).rows ?? []);
+    const all = rowData as ConnectRequestWithNames[];
     return {
       incoming: all.filter((r) => r.recipientId === userId),
       outgoing: all.filter((r) => r.senderId === userId),

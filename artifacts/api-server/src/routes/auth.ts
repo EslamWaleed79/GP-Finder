@@ -8,7 +8,8 @@ import { UserValidationService } from "../services/UserValidationService.js";
 import { SelfViewStrategy } from "../services/strategies/ContactVisibilityStrategy.js";
 import { JWT_SECRET, signJwt } from "../lib/jwt.js";
 import { sendVerificationEmail } from "../lib/mailer.js";
-import { db, usersTable } from "@workspace/db";
+import { db } from "@workspace/db";
+import { usersTable } from "@workspace/db/schema";
 import { eq, and, or, lt, lte, isNull } from "drizzle-orm";
 import type { RequestHandler } from "express";
 
@@ -24,6 +25,7 @@ type PendingRegistrationPayload = {
   skills: string[];
   bio: string | null;
   phone: string;
+  universityId: string;
   gpa: number;
   bylaw: "2018" | "2023";
   track: "Software Engineering" | "Hardware Design" | "Networks and Cybersecurity" | "AI" | "Embedded" | "Other" | null;
@@ -67,6 +69,7 @@ router.post("/auth/signup", (async (req, res) => {
     skills: Array.isArray(payload.skills) ? (payload.skills as string[]) : [],
     bio: typeof payload.bio === "string" ? payload.bio : null,
     phone: payload.phone as string,
+    universityId: payload.universityId as string,
     gpa: Number(payload.gpa),
     bylaw: payload.bylaw as "2018" | "2023",
     track: payload.track as PendingRegistrationPayload["track"],
@@ -125,12 +128,13 @@ router.post("/auth/verify-email", (async (req, res) => {
     .values({
       ...userData,
       passwordHash: password,
+      universityId: userData.universityId,
       isVerified: true,
       verificationCode: null,
       verificationExpires: null,
       verificationRequestedAt: null,
       verificationAttempts: 0,
-    })
+    } as any)
     .returning();
 
   if (!user) {

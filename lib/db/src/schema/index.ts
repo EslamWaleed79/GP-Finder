@@ -57,6 +57,7 @@ export const usersTable = pgTable("users", {
     .$default(() => []),
   bio: text("bio"),
   phone: text("phone"),
+  universityId: text("university_id").notNull(),
   gpa: real("gpa"),
   bylaw: bylawEnum("bylaw"),
   track: userTrackEnum("track"),

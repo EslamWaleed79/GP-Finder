@@ -44,13 +44,8 @@ const EGYPTIAN_PHONE_RE = /^01[0-2,5]{1}[0-9]{8}$/;
 
 const step1Schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z
-    .string()
-    .email()
-    .refine(
-      (val) => val.endsWith("@eng.asu.edu.eg"),
-      "Must be an @eng.asu.edu.eg email"
-    ),
+  email: z.string().email("Enter a valid email address"),
+  universityId: z.string().regex(/^\d{7,8}$/, "ID must be 7-8 digits"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
@@ -109,7 +104,7 @@ export default function Signup() {
 
   const form1 = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { name: "", email: "", universityId: "", password: "" },
   });
 
   const form2 = useForm<Step2Data>({
@@ -195,9 +190,16 @@ export default function Signup() {
               </div>
               <div className="space-y-2">
                 <Label>University Email</Label>
-                <Input {...form1.register("email")} placeholder="student@eng.asu.edu.eg" />
+                <Input {...form1.register("email")} placeholder="student@example.com" />
                 {form1.formState.errors.email && (
                   <p className="text-sm text-destructive">{form1.formState.errors.email.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>University ID</Label>
+                <Input {...form1.register("universityId")} placeholder="e.g., 2300022" />
+                {form1.formState.errors.universityId && (
+                  <p className="text-sm text-destructive">{form1.formState.errors.universityId.message}</p>
                 )}
               </div>
               <div className="space-y-2">

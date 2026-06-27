@@ -1,5 +1,5 @@
-const ALLOWED_DOMAIN = "eng.asu.edu.eg";
 const EGYPTIAN_PHONE_RE = /^01[0-2,5]{1}[0-9]{8}$/;
+const UNIVERSITY_ID_RE = /^\d{7,8}$/;
 const VALID_TRACKS = [
   "Software Engineering",
   "Hardware Design",
@@ -12,18 +12,18 @@ const VALID_BYLAWS = ["2018", "2023"] as const;
 const VALID_GENDERS = ["Male", "Female"] as const;
 
 export class UserValidationService {
-  validateEmailDomain(email: string): { valid: boolean; error?: string } {
+  validateEmail(email: string): { valid: boolean; error?: string } {
     const lower = email.toLowerCase().trim();
     const parts = lower.split("@");
-    if (parts.length !== 2) {
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
       return { valid: false, error: "Invalid email format" };
     }
-    const domain = parts[1];
-    if (domain !== ALLOWED_DOMAIN) {
-      return {
-        valid: false,
-        error: `Signups are restricted to @${ALLOWED_DOMAIN} email addresses`,
-      };
+    return { valid: true };
+  }
+
+  validateUniversityId(universityId: string): { valid: boolean; error?: string } {
+    if (!UNIVERSITY_ID_RE.test(universityId)) {
+      return { valid: false, error: "ID must be 7-8 digits" };
     }
     return { valid: true };
   }
@@ -53,8 +53,14 @@ export class UserValidationService {
     if (!payload.email || typeof payload.email !== "string") {
       return { valid: false, error: "Email is required" };
     }
-    const domainCheck = this.validateEmailDomain(payload.email);
-    if (!domainCheck.valid) return domainCheck;
+    const emailCheck = this.validateEmail(payload.email);
+    if (!emailCheck.valid) return emailCheck;
+
+    if (!payload.universityId || typeof payload.universityId !== "string") {
+      return { valid: false, error: "University ID is required" };
+    }
+    const universityIdCheck = this.validateUniversityId(payload.universityId);
+    if (!universityIdCheck.valid) return universityIdCheck;
 
     if (
       !payload.password ||
