@@ -97,8 +97,8 @@ export default function ProjectDetail() {
     retry: false,
   });
 
-  const decideApplication = useMutation(
-    async ({ applicationId, action }: { applicationId: number; action: "accepted" | "rejected" | "removed" }) => {
+  const decideApplication = useMutation({
+    mutationFn: async ({ applicationId, action }: { applicationId: number; action: "accepted" | "rejected" | "removed" }) => {
       const response = await fetch(`/api/applications/${applicationId}`, {
         method: "PATCH",
         credentials: "include",
@@ -111,17 +111,15 @@ export default function ProjectDetail() {
       }
       return response.json();
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
-        queryClient.invalidateQueries({ queryKey: ["projectApplications", id] });
-        toast({ title: "Application updated" });
-      },
-      onError: (err: any) => {
-        toast({ title: "Unable to update application", description: err?.message || "Please try again", variant: "destructive" });
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: ["projectApplications", id] });
+      toast({ title: "Application updated" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Unable to update application", description: err?.message || "Please try again", variant: "destructive" });
+    },
+  });
 
   if (isLoading) return <div>Loading project...</div>;
   if (!project) return <div>Project not found</div>;
