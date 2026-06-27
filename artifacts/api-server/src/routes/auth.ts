@@ -106,28 +106,16 @@ router.post("/auth/verify-email", (async (req, res) => {
     return res.status(400).json({ error: "Invalid or expired code" });
   }
 
-  const [updatedUser] = await db
+  await db
     .update(usersTable)
     .set({
       isVerified: true,
       verificationCode: null,
       verificationExpires: null,
     })
-    .where(eq(usersTable.id, user.id))
-    .returning();
+    .where(eq(usersTable.id, user.id));
 
-  if (!updatedUser) {
-    return res.status(500).json({ error: "Unable to verify email. Please try again." });
-  }
-
-  return res.status(200).json({
-    message: "Verified successfully!",
-    user: {
-      id: updatedUser.id,
-      email: updatedUser.email,
-      isVerified: updatedUser.isVerified,
-    },
-  });
+  return res.status(200).json({ message: "Verified successfully!" });
 }) as RequestHandler);
 
 router.post("/auth/resend-otp", (async (req, res) => {

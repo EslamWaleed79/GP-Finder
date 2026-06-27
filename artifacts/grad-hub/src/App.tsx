@@ -57,6 +57,10 @@ function ProtectedRoute({
 
   if (!me) return <Redirect to="/login" />;
 
+  if (me.isVerified && location === "/verify-email") {
+    return <Redirect to="/dashboard" />;
+  }
+
   if (!me.isVerified && location !== "/verify-email") {
     return <Redirect to="/verify-email" />;
   }
