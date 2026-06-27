@@ -8,7 +8,7 @@ import {
   useGetMe,
 } from "@workspace/api-client-react";
 import { useParams, useLocation, Link } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,6 +77,53 @@ export default function ProjectDetail() {
       },
     },
   });
+
+  const {
+    data: applications = [],
+    isLoading: loadingApplications,
+  } = useQuery<ProjectApplicationWithApplicant[]>(
+    ["projectApplications", id],
+    async () => {
+      const response = await fetch(`/api/projects/${id}/applications`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Failed to load applications");
+      }
+      return response.json();
+    },
+    {
+      enabled: isLeader && !!id,
+      retry: false,
+    }
+  );
+
+  const decideApplication = useMutation(
+    async ({ applicationId, action }: { applicationId: number; action: "accepted" | "rejected" | "removed" }) => {
+      const response = await fetch(`/api/applications/${applicationId}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Failed to update application");
+      }
+      return response.json();
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(id) });
+        queryClient.invalidateQueries({ queryKey: ["projectApplications", id] });
+        toast({ title: "Application updated" });
+      },
+      onError: (err: any) => {
+        toast({ title: "Unable to update application", description: err?.message || "Please try again", variant: "destructive" });
+      },
+    }
+  );
 
   if (isLoading) return <div>Loading project...</div>;
   if (!project) return <div>Project not found</div>;
@@ -183,7 +230,31 @@ export default function ProjectDetail() {
         </CardContent>
       </Card>
 
-      {/* Leader-only application management is not currently available in the generated client. */}
+      {isLeader && (
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div>
+              <h3 className="font-semibold mb-4">Pending Applications</h3>
+              {loadingApplications ? (
+                <div>Loading applications...</div>
+              ) : applications.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No pending applications yet.</div>
+              ) : (
+                <div className="space-y-4">
+                  {applications.map((app) => (
+                    <ApplicationRow
+                      key={app.id}
+                      app={app}
+                      onDecide={(action) => decideApplication.mutate({ applicationId: app.id, action })}
+                      isPending={decideApplication.isPending}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
