@@ -113,7 +113,12 @@ router.post("/auth/verify-email", (async (req, res) => {
       verificationCode: null,
       verificationExpires: null,
     })
-    .where(eq(usersTable.id, user.id));
+    .where(eq(usersTable.id, user.id))
+    .returning();
+
+  if (!updatedUser) {
+    return res.status(500).json({ error: "Unable to verify email. Please try again." });
+  }
 
   return res.status(200).json({
     message: "Verified successfully!",
