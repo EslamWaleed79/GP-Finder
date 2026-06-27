@@ -2,7 +2,6 @@ import {
   useListProjects,
   useListUsers,
   useGetMe,
-  useSendConnection,
   useRespondConnection,
   useListConnections,
   getListProjectsQueryKey,
@@ -11,7 +10,7 @@ import {
 } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Link } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -75,16 +74,27 @@ export default function Dashboard() {
     (genderFilter === "All" || user.gender === genderFilter)
   );
 
-  const applyToProject = useSendConnection({
-    mutation: {
-      onSuccess: () => {
-        setHasAppliedLocally(true);
-        queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
-        toast({ title: "Application submitted!" });
-      },
-      onError: (err: any) => {
-        toast({ title: "Failed", description: err?.message || "Error submitting application", variant: "destructive" });
-      },
+  const applyToProject = useMutation({
+    mutationFn: async ({ projectId }: { projectId: number }) => {
+      const response = await fetch("/api/applications", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId }),
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Failed to submit project application");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      setHasAppliedLocally(true);
+      queryClient.invalidateQueries({ queryKey: getListProjectsQueryKey() });
+      toast({ title: "Application submitted!" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed", description: err?.message || "Error submitting application", variant: "destructive" });
     },
   });
 
@@ -216,9 +226,7 @@ export default function Dashboard() {
                         size="sm"
                         className="text-xs"
                         disabled={applyToProject.isPending || !project.canApply || project.isMember || hasAppliedLocally}
-                        onClick={() =>
-                          applyToProject.mutate({ data: { recipientId: project.leaderId ?? project.ownerId, projectId: project.id } })
-                        }
+                        onClick={() => applyToProject.mutate({ projectId: project.id })}
                       >
                         {hasAppliedLocally
                           ? project.isMember
