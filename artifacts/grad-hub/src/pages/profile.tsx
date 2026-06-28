@@ -59,6 +59,7 @@ const profileSchema = z
       .url("Please enter a valid Google Drive or web URL")
       .optional()
       .or(z.literal("")),
+    linkedinUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
     skills: z.array(z.string()).min(1, "Select at least one skill"),
     bio: z.string().optional(),
   })
@@ -99,6 +100,7 @@ export default function Profile() {
       gpa: undefined as any,
       phone: "",
       cvLink: "",
+      linkedinUrl: "",
       skills: [],
       bio: "",
     },
@@ -115,6 +117,7 @@ export default function Profile() {
         gpa: me.gpa ?? undefined,
         phone: "",
         cvLink: me.cvLink ?? "",
+        linkedinUrl: me.linkedinUrl ?? "",
         skills: me.skills ?? [],
         bio: me.bio ?? "",
       });
@@ -136,6 +139,7 @@ export default function Profile() {
         gpa: data.gpa ? Number(data.gpa) : null,
         phone: data.phone || null,
         cvLink: data.cvLink || null,
+        linkedinUrl: data.linkedinUrl || null,
         skills: data.skills,
         bio: data.bio || null,
       },
@@ -275,6 +279,17 @@ export default function Profile() {
               />
               {form.formState.errors.cvLink && (
                 <p className="text-sm text-destructive">{form.formState.errors.cvLink.message as string}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>LinkedIn Profile (public)</Label>
+              <Input
+                {...form.register("linkedinUrl")}
+                placeholder="https://www.linkedin.com/in/your-name"
+              />
+              {form.formState.errors.linkedinUrl && (
+                <p className="text-sm text-destructive">{form.formState.errors.linkedinUrl.message as string}</p>
               )}
             </div>
 

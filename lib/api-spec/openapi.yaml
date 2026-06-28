@@ -131,6 +131,46 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
+  /auth/resend-otp:
+    post:
+      operationId: resendOtp
+      tags: [auth]
+      summary: Resend a verification code for pending signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pendingRegistrationToken:
+                  type: string
+              required: [pendingRegistrationToken]
+      responses:
+        "200":
+          description: Verification code resent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  pendingRegistrationToken:
+                    type: string
+        "400":
+          description: Invalid or expired registration token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /auth/logout:
     post:
       operationId: logout
