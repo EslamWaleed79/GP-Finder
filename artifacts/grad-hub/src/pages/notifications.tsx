@@ -6,7 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 export default function Notifications() {
-  const { data: notifications = [], isLoading } = useListNotifications();
+  const { data: notifications = [], isLoading } = useListNotifications({
+    query: {
+      queryKey: getListNotificationsQueryKey(),
+      refetchInterval: 10000,
+      refetchIntervalInBackground: false,
+    },
+  });
   const queryClient = useQueryClient();
   const markRead = useMarkNotificationRead();
 

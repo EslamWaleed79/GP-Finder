@@ -6,7 +6,13 @@ import { Button } from "./ui/button";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { data: me } = useGetMe();
-  const { data: notifications = [] } = useListNotifications({ query: { queryKey: getListNotificationsQueryKey(), refetchInterval: 30000 } });
+  const { data: notifications = [] } = useListNotifications({
+    query: {
+      queryKey: getListNotificationsQueryKey(),
+      refetchInterval: 10000,
+      refetchIntervalInBackground: false,
+    },
+  });
   const unreadCount = notifications.filter((notification) => !notification.read).length;
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
