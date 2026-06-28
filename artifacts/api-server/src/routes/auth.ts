@@ -152,7 +152,7 @@ router.post("/auth/verify-email", (async (req, res) => {
   return res.status(200).json({ message: "Verified successfully!", token, user: view });
 }) as RequestHandler);
 
-router.post("/auth/resend-otp", (async (req, res) => {
+router.post("/resend-otp", (async (req, res) => {
   const { pendingRegistrationToken } = req.body as { pendingRegistrationToken?: string };
 
   if (!pendingRegistrationToken) {
