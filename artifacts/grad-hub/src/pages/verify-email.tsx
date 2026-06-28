@@ -2,8 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLocation, Link } from "wouter";
-import { useMutation } from "@tanstack/react-query";
-import { useVerifyEmail } from "@workspace/api-client-react";
+import { useResendOtp, useVerifyEmail } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 const verifySchema = z.object({
   otp: z.string().trim().length(6, "Enter the 6-digit code"),
 });
-
-const RESEND_OTP_URL = "/api/auth/resend-otp";
 
 type VerifyData = z.infer<typeof verifySchema>;
 
@@ -42,47 +39,26 @@ export default function VerifyEmail() {
     },
   });
 
-  const resendOtpMutation = useMutation({
-    mutationFn: async () => {
-      if (typeof window === "undefined") {
-        throw new Error("Verification session is unavailable.");
-      }
+  const resendOtpMutation = useResendOtp({
+    mutation: {
+      onSuccess: (data) => {
+        if (typeof window !== "undefined" && data?.pendingRegistrationToken) {
+          window.sessionStorage.setItem("pendingRegistrationToken", data.pendingRegistrationToken);
+        }
 
-      const pendingRegistrationToken = window.sessionStorage.getItem("pendingRegistrationToken");
-      if (!pendingRegistrationToken) {
-        throw new Error("Verification session expired. Please sign up again.");
-      }
-
-      const response = await fetch(RESEND_OTP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pendingRegistrationToken }),
-      });
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Unable to resend verification code.");
-      }
-
-      return data as { message?: string; pendingRegistrationToken?: string };
-    },
-    onSuccess: (data) => {
-      if (typeof window !== "undefined" && data?.pendingRegistrationToken) {
-        window.sessionStorage.setItem("pendingRegistrationToken", data.pendingRegistrationToken);
-      }
-
-      toast({
-        title: "New code sent!",
-        description: "Please check your inbox.",
-        duration: 4000,
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Unable to resend verification code",
-        description: error?.message || "Please try again.",
-        variant: "destructive",
-      });
+        toast({
+          title: "New code sent!",
+          description: "Please check your inbox.",
+          duration: 4000,
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Unable to resend verification code",
+          description: error?.message || "Please try again.",
+          variant: "destructive",
+        });
+      },
     },
   });
 
@@ -117,7 +93,21 @@ export default function VerifyEmail() {
   };
 
   const handleResendOtp = () => {
-    resendOtpMutation.mutate();
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const pendingRegistrationToken = window.sessionStorage.getItem("pendingRegistrationToken");
+    if (!pendingRegistrationToken) {
+      toast({
+        title: "Verification session expired",
+        description: "Please sign up again to receive a new code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    resendOtpMutation.mutate({ data: { pendingRegistrationToken } });
   };
 
   return (
