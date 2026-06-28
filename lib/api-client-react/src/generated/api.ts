@@ -43,6 +43,8 @@ import type {
   ProjectDetail,
   ProjectInput,
   ProjectUpdate,
+  ResendOtp200,
+  ResendOtpBody,
   SignupInput,
   UserDetailView,
   VerifyEmailBody
@@ -362,6 +364,76 @@ export const useVerifyEmail = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getVerifyEmailMutationOptions(options));
+    }
+
+export const getResendOtpUrl = () => {
+
+
+
+
+  return `/api/auth/resend-otp`
+}
+
+/**
+ * @summary Resend a verification code for pending signup
+ */
+export const resendOtp = async (resendOtpBody: ResendOtpBody, options?: RequestInit): Promise<ResendOtp200> => {
+
+  return customFetch<ResendOtp200>(getResendOtpUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(resendOtpBody)
+  }
+);}
+
+
+
+
+export const getResendOtpMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resendOtp>>, TError,{data: BodyType<ResendOtpBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resendOtp>>, TError,{data: BodyType<ResendOtpBody>}, TContext> => {
+
+const mutationKey = ['resendOtp'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resendOtp>>, {data: BodyType<ResendOtpBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  resendOtp(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResendOtpMutationResult = NonNullable<Awaited<ReturnType<typeof resendOtp>>>
+    export type ResendOtpMutationBody = BodyType<ResendOtpBody>
+    export type ResendOtpMutationError = ErrorType<ApiError>
+
+    /**
+ * @summary Resend a verification code for pending signup
+ */
+export const useResendOtp = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resendOtp>>, TError,{data: BodyType<ResendOtpBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resendOtp>>,
+        TError,
+        {data: BodyType<ResendOtpBody>},
+        TContext
+      > => {
+      return useMutation(getResendOtpMutationOptions(options));
     }
 
 export const getLogoutUrl = () => {

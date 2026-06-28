@@ -47,6 +47,8 @@ export * from './projectInputStatus';
 export * from './projectStatus';
 export * from './projectUpdate';
 export * from './projectUpdateStatus';
+export * from './resendOtp200';
+export * from './resendOtpBody';
 export * from './signupInput';
 export * from './userDetailView';
 export * from './userDetailViewBylaw';

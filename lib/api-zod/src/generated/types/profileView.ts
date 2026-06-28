@@ -23,6 +23,8 @@ export interface ProfileView {
   /** @nullable */
   cvLink?: string | null;
   /** @nullable */
+  linkedinUrl?: string | null;
+  /** @nullable */
   track?: string | null;
   /** @nullable */
   customTrack?: string | null;

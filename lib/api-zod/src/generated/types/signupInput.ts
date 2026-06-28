@@ -18,4 +18,6 @@ export interface SignupInput {
   bio?: string;
   /** @nullable */
   phone?: string | null;
+  /** @nullable */
+  linkedinUrl?: string | null;
 }

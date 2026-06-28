@@ -34,7 +34,8 @@ export const SignupBody = zod.object({
   "major": zod.string(),
   "skills": zod.array(zod.string()),
   "bio": zod.string().optional(),
-  "phone": zod.string().nullish()
+  "phone": zod.string().nullish(),
+  "linkedinUrl": zod.string().url().nullish()
 })
 
 export const SignupResponse = zod.object({
@@ -46,6 +47,7 @@ export const SignupResponse = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "linkedinUrl": zod.string().url().nullish(),
   "track": zod.string().nullish(),
   "customTrack": zod.string().nullish(),
   "bylaw": zod.enum(['2018', '2023']).nullish(),
@@ -75,6 +77,7 @@ export const LoginResponse = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "linkedinUrl": zod.string().url().nullish(),
   "track": zod.string().nullish(),
   "customTrack": zod.string().nullish(),
   "bylaw": zod.enum(['2018', '2023']).nullish(),
@@ -101,6 +104,19 @@ export const VerifyEmailResponse = zod.object({
 
 
 /**
+ * @summary Resend a verification code for pending signup
+ */
+export const ResendOtpBody = zod.object({
+  "pendingRegistrationToken": zod.string()
+})
+
+export const ResendOtpResponse = zod.object({
+  "message": zod.string().optional(),
+  "pendingRegistrationToken": zod.string().optional()
+})
+
+
+/**
  * @summary Log out the current session
  */
 export const LogoutResponse = zod.object({
@@ -118,6 +134,7 @@ export const GetMeResponse = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "linkedinUrl": zod.string().url().nullish(),
   "track": zod.string().nullish(),
   "customTrack": zod.string().nullish(),
   "bylaw": zod.enum(['2018', '2023']).nullish(),
@@ -147,6 +164,7 @@ export const ListUsersResponseItem = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "linkedinUrl": zod.string().url().nullish(),
   "track": zod.string().nullish(),
   "customTrack": zod.string().nullish(),
   "bylaw": zod.enum(['2018', '2023']).nullish(),
@@ -173,6 +191,7 @@ export const GetUserResponse = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "linkedinUrl": zod.string().url().nullish(),
   "track": zod.string().nullish(),
   "customTrack": zod.string().nullish(),
   "bylaw": zod.enum(['2018', '2023']).nullish(),
@@ -200,6 +219,7 @@ export const UpdateProfileBody = zod.object({
   "bio": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "linkedinUrl": zod.string().url().nullish(),
   "track": zod.string().nullish(),
   "customTrack": zod.string().nullish(),
   "bylaw": zod.enum(['2018', '2023']).nullish(),
@@ -214,6 +234,7 @@ export const UpdateProfileResponse = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "linkedinUrl": zod.string().url().nullish(),
   "track": zod.string().nullish(),
   "customTrack": zod.string().nullish(),
   "bylaw": zod.enum(['2018', '2023']).nullish(),
@@ -577,6 +598,7 @@ export const AdminListUsersResponseItem = zod.object({
   "skills": zod.array(zod.string()),
   "bio": zod.string().nullish(),
   "cvLink": zod.string().url().nullish(),
+  "linkedinUrl": zod.string().url().nullish(),
   "track": zod.string().nullish(),
   "customTrack": zod.string().nullish(),
   "bylaw": zod.enum(['2018', '2023']).nullish(),

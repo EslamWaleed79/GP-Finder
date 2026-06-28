@@ -493,6 +493,15 @@ export type VerifyEmailBody = {
   otp: string;
 };
 
+export type ResendOtpBody = {
+  pendingRegistrationToken: string;
+};
+
+export type ResendOtp200 = {
+  message?: string;
+  pendingRegistrationToken?: string;
+};
+
 export type ListUsersParams = {
 /**
  * Comma-separated skill tags to filter by
