@@ -33,6 +33,7 @@ type PendingRegistrationPayload = {
   gender: "Male" | "Female";
   role: "student" | "admin";
   cvLink: string | null;
+  linkedinUrl: string | null;
   otp: string;
   verificationAttempts: number;
   verificationRequestedAt: number;
@@ -80,6 +81,9 @@ router.post("/auth/signup", (async (req, res) => {
     gender: payload.gender as "Male" | "Female",
     role: "student",
     cvLink: payload.cvLink ? (payload.cvLink as string).trim() : null,
+    linkedinUrl: payload.linkedinUrl && typeof payload.linkedinUrl === "string"
+      ? payload.linkedinUrl.trim() || null
+      : null,
     otp,
     verificationAttempts: 0,
     verificationRequestedAt: Date.now(),

@@ -106,7 +106,7 @@ router.patch("/users/:id/profile", (async (req, res) => {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { name, skills, bio, phone, gpa, bylaw, track, customTrack, gender, cvLink } =
+  const { name, skills, bio, phone, gpa, bylaw, track, customTrack, gender, cvLink, linkedinUrl } =
     req.body as {
       name?: string;
       skills?: string[];
@@ -118,12 +118,13 @@ router.patch("/users/:id/profile", (async (req, res) => {
       customTrack?: string | null;
       gender?: "Male" | "Female";
       cvLink?: string | null;
+      linkedinUrl?: string | null;
     };
 
   const updated = await userRepo.update(id, {
     name,
     skills,
-    bio,
+    bio: typeof bio === "string" ? bio : undefined,
     phone,
     gpa,
     bylaw,
@@ -131,7 +132,8 @@ router.patch("/users/:id/profile", (async (req, res) => {
     customTrack,
     gender,
     cvLink,
-  });
+    linkedinUrl,
+  } as any);
   if (!updated) return res.status(404).json({ error: "User not found" });
 
   const strategy = new SelfViewStrategy();

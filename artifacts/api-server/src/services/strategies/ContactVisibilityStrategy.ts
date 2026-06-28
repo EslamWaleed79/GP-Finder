@@ -21,6 +21,7 @@ export interface ProfileViewResult {
   connectStatus: ConnectStatus;
   isVerified: boolean;
   cvLink?: string | null;
+  linkedinUrl?: string | null;
   // private fields — only present when connected or self
   email?: string | null;
   phone?: string | null;
@@ -48,6 +49,7 @@ export class PublicViewStrategy implements IContactVisibilityStrategy {
       connectStatus,
       isVerified: user.isVerified,
       cvLink: user.cvLink ?? null,
+      linkedinUrl: user.linkedinUrl ?? null,
     };
   }
 }

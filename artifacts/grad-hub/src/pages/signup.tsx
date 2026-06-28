@@ -64,6 +64,7 @@ const step2Schema = z
       .regex(EGYPTIAN_PHONE_RE, "Must be a valid Egyptian mobile number (e.g. 01012345678)"),
     skills: z.array(z.string()).min(1, "Select at least one skill"),
     cvLink: z.string().url("Please enter a valid Google Drive or web URL"),
+    linkedinUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
     bio: z
       .string()
       .min(20, "Bio must be at least 20 characters")
@@ -121,6 +122,7 @@ export default function Signup() {
       phone: "",
       skills: [],
       cvLink: "",
+      linkedinUrl: "",
       bio: "",
     },
   });
@@ -140,6 +142,7 @@ export default function Signup() {
         ...step1Data,
         ...data,
         customTrack: data.track === "Other" ? data.customTrack ?? null : null,
+        linkedinUrl: data.linkedinUrl || null,
         bio: data.bio || undefined,
       } as any,
     });
@@ -332,6 +335,14 @@ export default function Signup() {
                 <p className="text-sm text-amber-600">⚠️ Instructions: Ensure your Google Drive file sharing permissions are set to 'Anyone with the link can view' so teams, project leaders, and connections can successfully review your resume.</p>
                 {form2.formState.errors.cvLink && (
                   <p className="text-sm text-destructive">{form2.formState.errors.cvLink.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>LinkedIn URL</Label>
+                <Input {...form2.register("linkedinUrl")} placeholder="https://www.linkedin.com/in/your-name" />
+                <p className="text-sm text-muted-foreground">Adding your LinkedIn profile link increases your chances of finding teammates.</p>
+                {form2.formState.errors.linkedinUrl && (
+                  <p className="text-sm text-destructive">{form2.formState.errors.linkedinUrl.message}</p>
                 )}
               </div>
               <div className="space-y-2">

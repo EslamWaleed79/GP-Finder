@@ -810,6 +810,9 @@ components:
           type: string
         phone:
           type: ["string", "null"]
+        linkedinUrl:
+          type: ["string", "null"]
+          format: uri
 
     LoginInput:
       type: object
@@ -849,6 +852,9 @@ components:
         bio:
           type: ["string", "null"]
         cvLink:
+          type: ["string", "null"]
+          format: uri
+        linkedinUrl:
           type: ["string", "null"]
           format: uri
         track:
@@ -892,6 +898,9 @@ components:
         bio:
           type: ["string", "null"]
         cvLink:
+          type: ["string", "null"]
+          format: uri
+        linkedinUrl:
           type: ["string", "null"]
           format: uri
         track:
@@ -938,6 +947,9 @@ components:
         phone:
           type: ["string", "null"]
         cvLink:
+          type: ["string", "null"]
+          format: uri
+        linkedinUrl:
           type: ["string", "null"]
           format: uri
         track:

@@ -64,6 +64,7 @@ export const usersTable = pgTable("users", {
   gender: genderEnum("gender"),
   role: userRoleEnum("role").notNull().default("student"),
   cvLink: text("cv_link"),
+  linkedinUrl: text("linkedin_url"),
   isVerified: boolean("is_verified").notNull().default(false),
   verificationCode: varchar("verification_code", { length: 6 }),
   verificationExpires: timestamp("verification_expires"),

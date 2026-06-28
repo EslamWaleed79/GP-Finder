@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Linkedin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 function trackDisplay(track: string | null | undefined, customTrack: string | null | undefined): string {
@@ -183,6 +183,22 @@ export default function UserDetail() {
                     <p className="font-medium">{user.gpa.toFixed(2)} / 4.00</p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {user.linkedinUrl && (
+            <div className="mt-6 pt-6 border-t">
+              <div className="flex items-center gap-2">
+                <Linkedin className="w-4 h-4 text-primary" />
+                <a
+                  href={user.linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  LinkedIn Profile
+                </a>
               </div>
             </div>
           )}

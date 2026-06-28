@@ -132,6 +132,17 @@ export class UserValidationService {
       return { valid: false, error: "CV link must be a valid URL" };
     }
 
+    if (payload.linkedinUrl && typeof payload.linkedinUrl === "string") {
+      try {
+        const url = new URL(payload.linkedinUrl.trim());
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          return { valid: false, error: "LinkedIn URL must be a valid URL" };
+        }
+      } catch {
+        return { valid: false, error: "LinkedIn URL must be a valid URL" };
+      }
+    }
+
     if (
       !payload.bio ||
       typeof payload.bio !== "string" ||

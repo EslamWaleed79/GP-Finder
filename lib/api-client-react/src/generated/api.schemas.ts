@@ -29,6 +29,8 @@ export interface SignupInput {
   bio?: string;
   /** @nullable */
   phone?: string | null;
+  /** @nullable */
+  linkedinUrl?: string | null;
 }
 
 export interface LoginInput {
@@ -91,6 +93,8 @@ export interface ProfileView {
   bio?: string | null;
   /** @nullable */
   cvLink?: string | null;
+  /** @nullable */
+  linkedinUrl?: string | null;
   /** @nullable */
   track?: string | null;
   /** @nullable */
@@ -165,6 +169,8 @@ export interface UserDetailView {
   /** @nullable */
   cvLink?: string | null;
   /** @nullable */
+  linkedinUrl?: string | null;
+  /** @nullable */
   track?: string | null;
   /** @nullable */
   customTrack?: string | null;
@@ -221,6 +227,8 @@ export interface ProfileUpdate {
   phone?: string | null;
   /** @nullable */
   cvLink?: string | null;
+  /** @nullable */
+  linkedinUrl?: string | null;
   /** @nullable */
   track?: string | null;
   /** @nullable */

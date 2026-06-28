@@ -66,6 +66,7 @@ export class UserRepository {
         | "customTrack"
         | "gender"
         | "cvLink"
+        | "linkedinUrl"
       >
     >
   ): Promise<User | undefined> {
