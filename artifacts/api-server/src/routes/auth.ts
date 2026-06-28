@@ -190,7 +190,10 @@ router.post("/auth/resend-otp", (async (req, res) => {
     verificationAttempts: decodedPayload.verificationAttempts + 1,
     verificationRequestedAt: now,
   };
-  const refreshedToken = signJwt(refreshedPayload, { expiresIn: "15m" });
+  const cleanPayload = Object.fromEntries(
+    Object.entries(refreshedPayload).filter(([key]) => !["exp", "iat", "nbf"].includes(key)),
+  ) as Record<string, unknown>;
+  const refreshedToken = signJwt(cleanPayload, { expiresIn: "15m" });
 
   try {
     await sendVerificationEmail(decodedPayload.email, otp);
