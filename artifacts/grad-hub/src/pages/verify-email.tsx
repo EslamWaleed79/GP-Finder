@@ -15,6 +15,8 @@ const verifySchema = z.object({
   otp: z.string().trim().length(6, "Enter the 6-digit code"),
 });
 
+const RESEND_OTP_URL = "/api/auth/resend-otp";
+
 type VerifyData = z.infer<typeof verifySchema>;
 
 export default function VerifyEmail() {
@@ -51,7 +53,7 @@ export default function VerifyEmail() {
         throw new Error("Verification session expired. Please sign up again.");
       }
 
-      const response = await fetch("/api/auth/resend-otp", {
+      const response = await fetch(RESEND_OTP_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pendingRegistrationToken }),
